@@ -1,19 +1,9 @@
 #include "Game.h"
+#include <math.h>
 
 Game::Game() {
-	ClearField();
-	SetBag();
-
-	m_currentMino.minoType = m_bagArr[m_bagIndex];
-	m_bagIndex++;
-	for (int i = 0; i < 4; i++) {
-		m_nextMinos[i].minoType = m_bagArr[m_bagIndex];
-		m_bagIndex++;
-	}
-
-	m_currentMinoPos = { 3, -1 };
-
-
+	m_scene = e_TITLE;
+	Init();
 }
 
 bool Game::Update() {
@@ -22,10 +12,13 @@ bool Game::Update() {
 		if (Console::Instance()->GetKeyEvent() != KEY_NOT_INPUTED) {
 			m_scene = e_GAME;
 			m_gameTimer.Start();
+			m_prevMinoDownTime = m_gameTimer.Elapse();
 		}
 		break;
 	case e_GAME:
 		MinoOpe();
+		MinoDown();
+		m_lockDown.Update();
 		break;
 	default:
 		break;
@@ -50,6 +43,27 @@ void Game::Draw() {
 		break;
 	}
 }
+void Game::Init() {
+	ClearField();
+	SetBag();
+
+	m_currentMino.minoType = m_bagArr[m_bagIndex];
+	m_bagIndex++;
+	for (int i = 0; i < 4; i++) {
+		m_nextMinos[i].minoType = m_bagArr[m_bagIndex];
+		m_bagIndex++;
+	}
+
+	m_currentMinoPos = { 3, -1 }; // ‚±‚±
+	m_score = 0;
+	m_currentLevel = 1;
+	m_currentDeletedLineNum = 0;
+	m_prevMinoDownTime = 0;
+	SpeedUpdate();
+	m_lockDown.Init();
+
+	m_topScore = 0; //~~~~~~~
+}
 void Game::ClearField() {
 	for (size_t i = 0; i < FIELD_H; i++) for (size_t j = 0; j < FIELD_W; j++) m_field[j][i] = NONE;
 }
@@ -63,6 +77,9 @@ void Game::SetBag() {
 		m_bagArr[i] = m_bagArr[r];
 		m_bagArr[r] = tmp;
 	}
+}
+void Game::SpeedUpdate() {
+	m_speedWaitMs = (int)(pow((0.8 - ((m_currentLevel - 1) * 0.007)), (m_currentLevel - 1)) * 1000);
 }
 void Game::DrawTitle() {
 	Console::Instance()->DrawBox(2, 8, 3, 1, BLOCK_COLOR[MN_Z]);
@@ -113,13 +130,13 @@ void Game::DrawStage() {
 	Console::Instance()->Print(35, 0, BLOCK_COLOR[NONE], " NEXT ");
 
 	Console::Instance()->Print(2, 6, BLOCK_COLOR[NONE], "SCORE:");
-	Console::Instance()->Printf(2, 7, BLOCK_COLOR[TEXT], "%8d",100);
+	Console::Instance()->Printf(2, 7, BLOCK_COLOR[TEXT], "%8d", m_score);
 	Console::Instance()->Print(2, 8, BLOCK_COLOR[NONE], "HI-SCORE");
 	Console::Instance()->Printf(2, 9, BLOCK_COLOR[TEXT], "%8d", 100);
 	Console::Instance()->Print(2, 11, BLOCK_COLOR[NONE], "LEVEL:");
-	Console::Instance()->Printf(2, 12, BLOCK_COLOR[TEXT], "%8d", 100);
+	Console::Instance()->Printf(2, 12, BLOCK_COLOR[TEXT], "%8d", m_currentLevel);
 	Console::Instance()->Print(2, 13, BLOCK_COLOR[NONE], "LINES:");
-	Console::Instance()->Printf(2, 14, BLOCK_COLOR[TEXT], "%8d", 100);
+	Console::Instance()->Printf(2, 14, BLOCK_COLOR[TEXT], "%8d", m_currentDeletedLineNum);
 	Console::Instance()->Print(2, 15, BLOCK_COLOR[NONE], "TIME:");
 	if ((int)(m_gameTimer.Elapse() / 60000) < 60)
 		Console::Instance()->Printf(2, 16, BLOCK_COLOR[TEXT], "%02d:%02d.%02d", (int)(m_gameTimer.Elapse() / 60000) % 60, (int)(m_gameTimer.Elapse() / 1000) % 60, (int)(m_gameTimer.Elapse() / 10) - (int)(m_gameTimer.Elapse() / 1000) * 100);
@@ -128,7 +145,7 @@ void Game::DrawStage() {
 	Console::Instance()->Print(2, 19, BLOCK_COLOR[NONE], "FPS:");
 	Console::Instance()->Printf(6, 19, BLOCK_COLOR[TEXT], "%.1f", Console::Instance()->GetFPSRate());
 }
-void Game::DrawMino(COORD minoPos, MinoInfo minoInfo, bool isFix, bool isGhost) {
+void Game::DrawMino(COORD minoPos, MinoInfo_t minoInfo, bool isFix, bool isGhost) {
 	SHORT fixVal = isFix ? 6 : 0;
 	if (minoInfo.minoType >= MINO_TYPE || minoInfo.minoAngle >= MINO_ANGLE) return;
 	for (int i = 0; i < MINO_SIZE; i++)
@@ -157,27 +174,60 @@ void Game::DrawGhostMino() {
 }
 void Game::MinoOpe() {
 	switch (Console::Instance()->GetKeyEvent()) {
-	case KEY_INPUT_LEFT:
-		if (!IsHit({ m_currentMinoPos.X - 1, m_currentMinoPos.Y }, m_currentMino)) m_currentMinoPos.X--;
+	case KEY_INPUT_LEFT:	// MOVE LEFT
+		if (!IsHit({ m_currentMinoPos.X - 1, m_currentMinoPos.Y }, m_currentMino)) {
+			m_currentMinoPos.X--;
+			if (m_lockDown()) m_lockDown++;
+		}
 		break;
-	case KEY_INPUT_RIGHT:
-		if (!IsHit({ m_currentMinoPos.X + 1, m_currentMinoPos.Y }, m_currentMino)) m_currentMinoPos.X++;
+	case KEY_INPUT_RIGHT:	// MOVE RIGHT
+		if (!IsHit({ m_currentMinoPos.X + 1, m_currentMinoPos.Y }, m_currentMino)) {
+			m_currentMinoPos.X++;
+			if (m_lockDown()) m_lockDown++;
+		}
+		break;
+	case KEY_INPUT_DOWN:	// SOFT DROP
+		if (!m_lockDown()) m_prevMinoDownTime = -m_speedWaitMs;
+		break;
+	case ' ':				// HARD DROP
+		for (; m_currentMinoPos.Y < FIELD_H_SEEN && !IsHit(m_currentMinoPos, m_currentMino); m_currentMinoPos.Y++);
+		--m_currentMinoPos.Y;
+		m_prevMinoDownTime = -m_speedWaitMs;
 		break;
 	case KEY_INPUT_UP:
-		m_currentMino.minoType = (m_currentMino.minoType + 1) % 7;
 		break;
-	case KEY_INPUT_DOWN:
-		if (!IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino)) m_currentMinoPos.Y++;
-		break;
+	case 'X':
 	case 'x':
-		m_currentMino.minoAngle = (m_currentMino.minoAngle + 1) % 4;
 		break;
 	default:
 		break;
 	}
 	
 }
-bool Game::IsHit(COORD minoPos, MinoInfo minoInfo) {
+void Game::MinoDown() {
+	int speedWaitMs = m_speedWaitMs;
+	if (IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino)) {
+		if (!m_lockDown()) {
+			m_lockDown.Set(m_currentMinoPos.Y);
+		}
+		if (m_lockDown()) {
+			speedWaitMs = m_speedWaitMs > 500 ? m_speedWaitMs : 500;
+			if (m_lockDown.hasChanged()) m_prevMinoDownTime = m_gameTimer.Elapse();
+			if (m_lockDown.isOverStep()) speedWaitMs = 0;
+			m_lockDown.UpdateMaxY(m_currentMinoPos.Y);
+		}
+	}
+
+	if (speedWaitMs + m_prevMinoDownTime <= (signed)m_gameTimer.Elapse()) {
+		m_prevMinoDownTime = m_gameTimer.Elapse();
+		if (!IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino)) m_currentMinoPos.Y++;
+		else {
+			m_currentMinoPos = { 3, -1 }; // Replace 
+			m_lockDown.Init();
+		}
+	}
+}
+bool Game::IsHit(COORD minoPos, MinoInfo_t minoInfo) {
 	if (minoInfo.minoType >= MINO_TYPE || minoInfo.minoAngle >= MINO_ANGLE) return true;
 	for (int i = 0; i < MINO_SIZE; i++)
 		for (int j = 0; j < MINO_SIZE; j++)

@@ -17,7 +17,52 @@ enum Scenes {
 
 typedef struct {
 	int minoType = 0, minoAngle = 0;
-}MinoInfo;
+}MinoInfo_t;
+
+struct LockDown_t{
+	void  Init() {
+		m_isLockDown = false;
+		m_count = m_prevCount = 0;
+		m_maxY = 0;
+	}
+	void Set(SHORT maxY) {
+		m_isLockDown = true;
+		m_count = m_prevCount = 0;
+		m_maxY = maxY;
+	}
+	void Update() {
+		m_prevCount = m_count;
+	}
+	bool hasChanged() {
+		return m_count != m_prevCount;
+	}
+	bool isOverStep() {
+		return m_count > 14;
+	}
+	bool UpdateMaxY(int y){
+		bool ret = m_maxY < y;
+		if (ret) Init();
+		return ret;
+	}
+
+	bool operator()() {
+		return m_isLockDown;
+	}
+	LockDown_t operator++() {
+		++m_count;
+		return *this;
+	}
+	const LockDown_t operator++(int) {
+		LockDown_t tmp = *this;
+		++(*this);
+		return tmp;
+	}
+
+private:
+	int   m_count, m_prevCount;
+	SHORT m_maxY;
+	bool  m_isLockDown;
+};
 
 class Game {
 public:
@@ -29,17 +74,21 @@ public:
 	bool Update();
 	void Draw();
 private:
+	void Init();
 	void ClearField();
 	void SetBag();
+	void SpeedUpdate();
 	void DrawTitle();
 	void DrawStage();
-	void DrawMino(COORD minoPos, MinoInfo minoInfo, bool isFix = true, bool isGhost = false);
+	void DrawMino(COORD minoPos, MinoInfo_t minoInfo, bool isFix = true, bool isGhost = false);
 	void DrawField();
 	void DrawCurrentMino();
 	void DrawNextMinos();
 	void DrawGhostMino();
 	void MinoOpe();
-	bool IsHit(COORD minoPos, MinoInfo minoInfo);
+	void MinoDown();
+	bool IsHit(COORD minoPos, MinoInfo_t minoInfo);
+	void FixMino();
 
 private:
 	enum Blocks {
@@ -56,10 +105,6 @@ private:
 		BLOCK_NUM
 	};
 
-
-	Scenes m_scene = e_TITLE;
-	Timer  m_gameTimer;
-
 	const WORD BLOCK_COLOR[BLOCK_NUM] = {
 		GetColor(H_WHITE, L_BLACK),		// NONE
 		GetColor(L_BLACK, H_WHITE),		// BLOCK
@@ -67,11 +112,14 @@ private:
 		GetColor(H_CYAN, H_CYAN ),		// I
 		GetColor(H_YELLOW, H_YELLOW),	// O
 		GetColor(H_GREEN, H_GREEN),		// S
-		GetColor(L_RED, L_RED),		// Z
+		GetColor(L_RED, L_RED),			// Z
 		GetColor(L_BLUE, L_BLUE),		// J
 		GetColor(L_YELLOW, L_YELLOW),	// L
-		GetColor(L_PURPLE, L_PURPLE)		// T
+		GetColor(L_PURPLE, L_PURPLE)	// T
 	};
+
+	Scenes m_scene = e_TITLE;
+	Timer  m_gameTimer;
 	
 	Blocks m_field[FIELD_W][FIELD_H];
 	Blocks minoShapes[MINO_TYPE][MINO_ANGLE][MINO_SIZE][MINO_SIZE] {
@@ -225,11 +273,16 @@ private:
 		}
 	};
 
-	MinoInfo m_currentMino, m_holdMino, m_nextMinos[4];
+	MinoInfo_t m_currentMino, m_holdMino, m_nextMinos[4];
 	COORD m_currentMinoPos = { 0, 0 };
 
 
 	byte m_bagArr[MINO_TYPE];
 	size_t m_bagIndex;
+	int m_score, m_topScore, m_currentLevel, m_currentDeletedLineNum;
+	int m_speedWaitMs;
+	LONGLONG m_prevMinoDownTime;
+
+	LockDown_t m_lockDown;
 	
 };
