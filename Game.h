@@ -35,9 +35,10 @@ private:
 	void DrawStage();
 	void DrawMino(COORD minoPos, MinoInfo minoInfo, bool isFix = true);
 	void DrawField();
+	void DrawCurrentMino();
 	void DrawNextMinos();
 	void MinoOpe();
-	bool IsHit(COORD minoPos, MinoInfo minoInfo, bool isFix = true);
+	bool IsHit(COORD minoPos, MinoInfo minoInfo);
 
 private:
 	enum Blocks {
@@ -223,10 +224,11 @@ private:
 		}
 	};
 
-	MinoInfo m_nowMino, m_holdMino, m_nextMinos[4];
+	MinoInfo m_currentMino, m_holdMino, m_nextMinos[4];
+	COORD m_currentMinoPos = { 0, 0 };
+
 
 	byte m_bagArr[MINO_TYPE];
 	size_t m_bagIndex;
-
-	COORD m_nowMinoPos = { 0, 0 };
+	
 };

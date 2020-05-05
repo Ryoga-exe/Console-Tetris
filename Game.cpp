@@ -4,14 +4,14 @@ Game::Game() {
 	ClearField();
 	SetBag();
 
-	m_nowMino.minoType = m_bagArr[m_bagIndex];
+	m_currentMino.minoType = m_bagArr[m_bagIndex];
 	m_bagIndex++;
 	for (int i = 0; i < 4; i++) {
 		m_nextMinos[i].minoType = m_bagArr[m_bagIndex];
 		m_bagIndex++;
 	}
 
-	m_nowMinoPos = { 3, -1 }; 
+	m_currentMinoPos = { 3, -1 };
 
 
 }
@@ -25,6 +25,7 @@ bool Game::Update() {
 		}
 		break;
 	case e_GAME:
+		MinoOpe();
 		break;
 	default:
 		break;
@@ -41,6 +42,7 @@ void Game::Draw() {
 	case e_GAME:
 		DrawStage();
 		DrawField();
+		DrawCurrentMino();
 		DrawNextMinos();
 		break;
 	default:
@@ -137,16 +139,41 @@ void Game::DrawMino(COORD minoPos, MinoInfo minoInfo, bool isFix) {
 void Game::DrawField() {
 	for (size_t i = FIELD_H - FIELD_H_SEEN; i < FIELD_H; i++)
 		for (size_t j = 0; j < FIELD_W; j++)
-			Console::Instance()->DrawPixel(6 + (SHORT)j, (SHORT)i - 5, BLOCK_COLOR[m_field[j][i]]);
-	DrawMino(m_nowMinoPos, m_nowMino);
+			Console::Instance()->DrawPixel(6 + (SHORT)j, (SHORT)i - (FIELD_H - FIELD_H_SEEN), BLOCK_COLOR[m_field[j][i]]);
+}
+void Game::DrawCurrentMino() {
+	DrawMino(m_currentMinoPos, m_currentMino);
 }
 void Game::DrawNextMinos() {
 	for (SHORT i = 0; i < 4; i++)
 		DrawMino({ 17, 1 + i * 5 }, m_nextMinos[i], false);
 }
 void Game::MinoOpe() {
-	if (Console::Instance()->GetKeyEvent() != KEY_INPUT_LEFT) {
-		m_scene = e_GAME;
-		m_gameTimer.Start();
+	switch (Console::Instance()->GetKeyEvent()) {
+	case KEY_INPUT_LEFT:
+		if (!IsHit({ m_currentMinoPos.X - 1, m_currentMinoPos.Y }, m_currentMino)) m_currentMinoPos.X--;
+		break;
+	case KEY_INPUT_RIGHT:
+		if (!IsHit({ m_currentMinoPos.X + 1, m_currentMinoPos.Y }, m_currentMino)) m_currentMinoPos.X++;
+		break;
+	case KEY_INPUT_UP:
+		m_currentMino.minoType = (m_currentMino.minoType + 1) % 7;
+	case KEY_INPUT_DOWN:
+		m_currentMino.minoAngle = (m_currentMino.minoAngle + 1) % 4;
+
+	default:
+		break;
 	}
+	
+}
+bool Game::IsHit(COORD minoPos, MinoInfo minoInfo) {
+	if (minoInfo.minoType >= MINO_TYPE || minoInfo.minoAngle >= MINO_ANGLE) return true;
+	for (int i = 0; i < MINO_SIZE; i++)
+		for (int j = 0; j < MINO_SIZE; j++)
+			if (minoShapes[minoInfo.minoType][minoInfo.minoAngle][i][j] != NONE)
+				if ((minoPos.X + j >= 0 && minoPos.X + j < FIELD_W) && (minoPos.Y + i >= 0 - (FIELD_H - FIELD_H_SEEN) && minoPos.Y + i < FIELD_H))
+					if (m_field[minoPos.X + j][minoPos.Y + i + (FIELD_H - FIELD_H_SEEN)] != NONE) return true;
+					else continue;
+				else return true;
+	return false;
 }
