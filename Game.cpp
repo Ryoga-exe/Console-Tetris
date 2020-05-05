@@ -42,6 +42,7 @@ void Game::Draw() {
 	case e_GAME:
 		DrawStage();
 		DrawField();
+		DrawGhostMino();
 		DrawCurrentMino();
 		DrawNextMinos();
 		break;
@@ -127,14 +128,15 @@ void Game::DrawStage() {
 	Console::Instance()->Print(2, 19, BLOCK_COLOR[NONE], "FPS:");
 	Console::Instance()->Printf(6, 19, BLOCK_COLOR[TEXT], "%.1f", Console::Instance()->GetFPSRate());
 }
-void Game::DrawMino(COORD minoPos, MinoInfo minoInfo, bool isFix) {
+void Game::DrawMino(COORD minoPos, MinoInfo minoInfo, bool isFix, bool isGhost) {
 	SHORT fixVal = isFix ? 6 : 0;
 	if (minoInfo.minoType >= MINO_TYPE || minoInfo.minoAngle >= MINO_ANGLE) return;
 	for (int i = 0; i < MINO_SIZE; i++)
 		for (int j = 0; j < MINO_SIZE; j++)
 			if (minoShapes[minoInfo.minoType][minoInfo.minoAngle][i][j] != NONE &&
 				((fixVal + minoPos.X + j >= 0 && fixVal + minoPos.X + j < STAGE_W) && (minoPos.Y + i  >= 0 && minoPos.Y + i < STAGE_H)))
-				Console::Instance()->DrawPixel(fixVal + minoPos.X + j, minoPos.Y + i, BLOCK_COLOR[minoShapes[minoInfo.minoType][minoInfo.minoAngle][i][j]]);
+				if (!isGhost) Console::Instance()->DrawPixel(fixVal + minoPos.X + j, minoPos.Y + i, BLOCK_COLOR[minoShapes[minoInfo.minoType][minoInfo.minoAngle][i][j]]);
+				else Console::Instance()->Print((fixVal + minoPos.X + j) * 2, minoPos.Y + i, GetColor(GetBackgroundColor(BLOCK_COLOR[minoShapes[minoInfo.minoType][minoInfo.minoAngle][i][j]]), GetBackgroundColor(BLOCK_COLOR[NONE])), "Å†");
 }
 void Game::DrawField() {
 	for (size_t i = FIELD_H - FIELD_H_SEEN; i < FIELD_H; i++)
@@ -147,6 +149,11 @@ void Game::DrawCurrentMino() {
 void Game::DrawNextMinos() {
 	for (SHORT i = 0; i < 4; i++)
 		DrawMino({ 17, 1 + i * 5 }, m_nextMinos[i], false);
+}
+void Game::DrawGhostMino() {
+	SHORT i = 0;
+	for (i = m_currentMinoPos.Y; i < FIELD_H_SEEN && !IsHit({ m_currentMinoPos.X, i }, m_currentMino); i++);
+	DrawMino({ m_currentMinoPos.X, i - 1 }, m_currentMino, true, true);
 }
 void Game::MinoOpe() {
 	switch (Console::Instance()->GetKeyEvent()) {

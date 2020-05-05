@@ -33,10 +33,11 @@ private:
 	void SetBag();
 	void DrawTitle();
 	void DrawStage();
-	void DrawMino(COORD minoPos, MinoInfo minoInfo, bool isFix = true);
+	void DrawMino(COORD minoPos, MinoInfo minoInfo, bool isFix = true, bool isGhost = false);
 	void DrawField();
 	void DrawCurrentMino();
 	void DrawNextMinos();
+	void DrawGhostMino();
 	void MinoOpe();
 	bool IsHit(COORD minoPos, MinoInfo minoInfo);
 
@@ -63,13 +64,13 @@ private:
 		GetColor(H_WHITE, L_BLACK),		// NONE
 		GetColor(L_BLACK, H_WHITE),		// BLOCK
 		GetColor(H_YELLOW, L_BLACK),	// TEXT
-		GetColor(H_WHITE, H_CYAN ),		// I
-		GetColor(H_WHITE, H_YELLOW),	// O
-		GetColor(H_WHITE, H_GREEN),		// S
-		GetColor(H_WHITE, L_RED),		// Z
-		GetColor(H_WHITE, L_BLUE),		// J
-		GetColor(H_WHITE, L_YELLOW),	// L
-		GetColor(H_WHITE, L_PURPLE)		// T
+		GetColor(H_CYAN, H_CYAN ),		// I
+		GetColor(H_YELLOW, H_YELLOW),	// O
+		GetColor(H_GREEN, H_GREEN),		// S
+		GetColor(L_RED, L_RED),		// Z
+		GetColor(L_BLUE, L_BLUE),		// J
+		GetColor(L_YELLOW, L_YELLOW),	// L
+		GetColor(L_PURPLE, L_PURPLE)		// T
 	};
 	
 	Blocks m_field[FIELD_W][FIELD_H];
