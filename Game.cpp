@@ -158,9 +158,13 @@ void Game::MinoOpe() {
 		break;
 	case KEY_INPUT_UP:
 		m_currentMino.minoType = (m_currentMino.minoType + 1) % 7;
+		break;
 	case KEY_INPUT_DOWN:
+		if (!IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino)) m_currentMinoPos.Y++;
+		break;
+	case 'x':
 		m_currentMino.minoAngle = (m_currentMino.minoAngle + 1) % 4;
-
+		break;
 	default:
 		break;
 	}
@@ -171,7 +175,7 @@ bool Game::IsHit(COORD minoPos, MinoInfo minoInfo) {
 	for (int i = 0; i < MINO_SIZE; i++)
 		for (int j = 0; j < MINO_SIZE; j++)
 			if (minoShapes[minoInfo.minoType][minoInfo.minoAngle][i][j] != NONE)
-				if ((minoPos.X + j >= 0 && minoPos.X + j < FIELD_W) && (minoPos.Y + i >= 0 - (FIELD_H - FIELD_H_SEEN) && minoPos.Y + i < FIELD_H))
+				if ((minoPos.X + j >= 0 && minoPos.X + j < FIELD_W) && (minoPos.Y + i >= 0 - (FIELD_H - FIELD_H_SEEN) && minoPos.Y + i < FIELD_H_SEEN))
 					if (m_field[minoPos.X + j][minoPos.Y + i + (FIELD_H - FIELD_H_SEEN)] != NONE) return true;
 					else continue;
 				else return true;
