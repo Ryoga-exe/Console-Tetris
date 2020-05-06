@@ -16,7 +16,7 @@ enum Scenes {
 };
 
 typedef struct {
-	int minoType = 0, minoAngle = 0;
+	byte minoType = 0, minoAngle = 0;
 }MinoInfo_t;
 
 struct LockDown_t{
@@ -77,6 +77,7 @@ private:
 	void Init();
 	void ClearField();
 	void SetBag();
+	bool InitMinoPos();
 	void SpeedUpdate();
 	void DrawTitle();
 	void DrawStage();
@@ -89,6 +90,7 @@ private:
 	void MinoDown();
 	bool IsHit(COORD minoPos, MinoInfo_t minoInfo);
 	void FixMino();
+	void MinoUpdate();
 
 private:
 	enum Blocks {

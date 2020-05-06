@@ -54,7 +54,8 @@ void Game::Init() {
 		m_bagIndex++;
 	}
 
-	m_currentMinoPos = { 3, -1 }; // ‚±‚±
+	InitMinoPos();
+
 	m_score = 0;
 	m_currentLevel = 1;
 	m_currentDeletedLineNum = 0;
@@ -68,15 +69,27 @@ void Game::ClearField() {
 	for (size_t i = 0; i < FIELD_H; i++) for (size_t j = 0; j < FIELD_W; j++) m_field[j][i] = NONE;
 }
 void Game::SetBag() {
-	for (byte i = 0; i < MINO_TYPE; i++) m_bagArr[i] = i;
+	for (int i = 0; i < MINO_TYPE; i++) m_bagArr[i] = i;
 	m_bagIndex = 0;
 	// shuffle
 	for (size_t i = MINO_TYPE - 1; i > 0; i--) {
-		size_t r = GetRand(i + 1);
+		size_t r = GetRand(i);
 		byte tmp = m_bagArr[i];
 		m_bagArr[i] = m_bagArr[r];
 		m_bagArr[r] = tmp;
 	}
+}
+bool Game::InitMinoPos() {
+	m_currentMinoPos.X = 3;
+	bool ret = true;
+	for (SHORT i = m_currentMinoPos.Y = m_currentMino.minoType == 0 ? 0 : -1; i > m_currentMinoPos.Y - 2; i--) {
+		if (!IsHit({ m_currentMinoPos.X , i }, m_currentMino)) {
+			m_currentMinoPos.Y = i;
+			ret = false;
+			break;
+		}
+	}
+	return ret;
 }
 void Game::SpeedUpdate() {
 	m_speedWaitMs = (int)(pow((0.8 - ((m_currentLevel - 1) * 0.007)), (m_currentLevel - 1)) * 1000);
@@ -222,7 +235,17 @@ void Game::MinoDown() {
 		m_prevMinoDownTime = m_gameTimer.Elapse();
 		if (!IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino)) m_currentMinoPos.Y++;
 		else {
-			m_currentMinoPos = { 3, -1 }; // Replace 
+			FixMino();
+			MinoUpdate();
+			/*
+				delete line
+
+				etc...
+				
+			*/
+			if (InitMinoPos()) {
+				// GameOver
+			}
 			m_lockDown.Init();
 		}
 	}
@@ -237,4 +260,21 @@ bool Game::IsHit(COORD minoPos, MinoInfo_t minoInfo) {
 					else continue;
 				else return true;
 	return false;
+}
+void Game::FixMino() {
+	for (int i = 0; i < MINO_SIZE; i++)
+		for (int j = 0; j < MINO_SIZE; j++)
+			if (minoShapes[m_currentMino.minoType][m_currentMino.minoAngle][i][j] != NONE)
+				m_field[m_currentMinoPos.X + j][m_currentMinoPos.Y + i + (FIELD_H - FIELD_H_SEEN)] = minoShapes[m_currentMino.minoType][m_currentMino.minoAngle][i][j];
+}
+void Game::MinoUpdate() {
+	m_currentMino = m_nextMinos[0];
+	for (size_t i = 0; i < 4 - 1; i++) {
+		m_nextMinos[i] = m_nextMinos[i + 1];
+	}
+	if (m_bagIndex >= MINO_TYPE) {
+		SetBag();
+	}
+	m_nextMinos[4 - 1].minoType = m_bagArr[m_bagIndex];
+	m_bagIndex++;
 }
