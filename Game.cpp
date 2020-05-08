@@ -38,6 +38,7 @@ void Game::Draw() {
 		DrawGhostMino();
 		DrawCurrentMino();
 		DrawNextMinos();
+		DrawHoldMino();
 		break;
 	default:
 		break;
@@ -51,8 +52,11 @@ void Game::Init() {
 	m_bagIndex++;
 	for (int i = 0; i < 4; i++) {
 		m_nextMinos[i].minoType = m_bagArr[m_bagIndex];
+		m_nextMinos[i].minoAngle = 0;
 		m_bagIndex++;
 	}
+	m_holdMino = { MINO_TYPE, 0 };
+	hasHeld = false;
 
 	InitMinoPos();
 
@@ -180,10 +184,13 @@ void Game::DrawNextMinos() {
 	for (SHORT i = 0; i < 4; i++)
 		DrawMino({ 17, 1 + i * 5 }, m_nextMinos[i], false);
 }
+void Game::DrawHoldMino() {
+	DrawMino({ 1,1 }, m_holdMino, false);
+}
 void Game::DrawGhostMino() {
-	SHORT i = 0;
-	for (i = m_currentMinoPos.Y; i < FIELD_H_SEEN && !IsHit({ m_currentMinoPos.X, i }, m_currentMino); i++);
-	DrawMino({ m_currentMinoPos.X, i - 1 }, m_currentMino, true, true);
+	SHORT i = m_currentMinoPos.Y;
+	for (; i < FIELD_H_SEEN && !IsHit({ m_currentMinoPos.X, i + 1 }, m_currentMino); i++);
+	DrawMino({ m_currentMinoPos.X, i }, m_currentMino, true, true);
 }
 void Game::MinoOpe() {
 	switch (Console::Instance()->GetKeyEvent()) {
@@ -200,18 +207,40 @@ void Game::MinoOpe() {
 		}
 		break;
 	case KEY_INPUT_DOWN:	// SOFT DROP
-		if (!m_lockDown()) m_prevMinoDownTime = -m_speedWaitMs;
+		if (!m_lockDown()) {
+			if (!IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino)) m_prevMinoDownTime = -m_speedWaitMs;
+			m_score++;
+		}
+		
 		break;
 	case ' ':				// HARD DROP
-		for (; m_currentMinoPos.Y < FIELD_H_SEEN && !IsHit(m_currentMinoPos, m_currentMino); m_currentMinoPos.Y++);
-		--m_currentMinoPos.Y;
+		for (; m_currentMinoPos.Y < FIELD_H_SEEN && !IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino); m_currentMinoPos.Y++, m_score+=2);
 		m_prevMinoDownTime = -m_speedWaitMs;
 		break;
-	case KEY_INPUT_UP:
-		break;
+	case KEY_INPUT_UP:		// ROTATE CLOCKWISE
 	case 'X':
-	case 'x':
+	case 'x': {
+			MinoInfo_t buf = m_currentMino;
+			buf.minoAngle = (buf.minoAngle + 1) % MINO_ANGLE;
+			if (!IsHit(m_currentMinoPos, buf)) {
+				m_currentMino = buf;
+				if (m_lockDown()) m_lockDown++;
+			}
+		}
 		break;
+	case 'Z':				// ROTATE COUNTER-CLOCKWISE
+	case 'z': {
+			MinoInfo_t buf = m_currentMino;
+			buf.minoAngle = (buf.minoAngle + MINO_ANGLE - 1) % MINO_ANGLE;
+			if (!IsHit(m_currentMinoPos, buf)) {
+				m_currentMino = buf;
+				if (m_lockDown()) m_lockDown++;
+			}
+		}
+		break;
+	case 'C':
+	case 'c':
+		HoldChange();
 	default:
 		break;
 	}
@@ -224,11 +253,13 @@ void Game::MinoDown() {
 			m_lockDown.Set(m_currentMinoPos.Y);
 		}
 		if (m_lockDown()) {
-			speedWaitMs = m_speedWaitMs > 500 ? m_speedWaitMs : 500;
+			speedWaitMs = 500;// m_speedWaitMs > 500 ? m_speedWaitMs : 500;
 			if (m_lockDown.hasChanged()) m_prevMinoDownTime = m_gameTimer.Elapse();
 			if (m_lockDown.isOverStep()) speedWaitMs = 0;
-			m_lockDown.UpdateMaxY(m_currentMinoPos.Y);
 		}
+	}
+	if (m_lockDown()) {
+		m_lockDown.UpdateMaxY(m_currentMinoPos.Y);
 	}
 
 	if (speedWaitMs + m_prevMinoDownTime <= (signed)m_gameTimer.Elapse()) {
@@ -247,6 +278,7 @@ void Game::MinoDown() {
 				// GameOver
 			}
 			m_lockDown.Init();
+			hasHeld = false;
 		}
 	}
 }
@@ -277,4 +309,25 @@ void Game::MinoUpdate() {
 	}
 	m_nextMinos[4 - 1].minoType = m_bagArr[m_bagIndex];
 	m_bagIndex++;
+}
+bool Game::MinoRotate(bool isClockWise) {
+	return false;
+}
+void Game::HoldChange() {
+	if (hasHeld) return;
+	// first (hold is empty)
+	if (m_holdMino.minoType < 0 || m_holdMino.minoType >= MINO_TYPE) {
+		m_holdMino.minoType = m_currentMino.minoType;
+		MinoUpdate();
+		if (InitMinoPos()) {
+			// GameOver
+		}
+		m_lockDown.Init();
+	}
+	else {
+		MinoInfo_t tmp = m_holdMino;
+		m_holdMino.minoType = m_currentMino.minoType;
+		m_currentMino = tmp;
+	}
+	hasHeld = true;
 }

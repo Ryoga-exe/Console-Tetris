@@ -41,8 +41,8 @@ struct LockDown_t{
 	}
 	bool UpdateMaxY(int y){
 		bool ret = m_maxY < y;
-		if (ret) Init();
-		return ret;
+		if (m_maxY < y) Init();
+		return m_maxY < y;
 	}
 
 	bool operator()() {
@@ -85,12 +85,15 @@ private:
 	void DrawField();
 	void DrawCurrentMino();
 	void DrawNextMinos();
+	void DrawHoldMino();
 	void DrawGhostMino();
 	void MinoOpe();
 	void MinoDown();
 	bool IsHit(COORD minoPos, MinoInfo_t minoInfo);
 	void FixMino();
 	void MinoUpdate();
+	bool MinoRotate(bool isClockWise);
+	void HoldChange();
 
 private:
 	enum Blocks {
@@ -277,7 +280,7 @@ private:
 
 	MinoInfo_t m_currentMino, m_holdMino, m_nextMinos[4];
 	COORD m_currentMinoPos = { 0, 0 };
-
+	bool hasHeld;
 
 	byte m_bagArr[MINO_TYPE];
 	size_t m_bagIndex;
