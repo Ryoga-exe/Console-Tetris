@@ -41,8 +41,8 @@ struct LockDown_t{
 	}
 	bool UpdateMaxY(int y){
 		bool ret = m_maxY < y;
-		if (m_maxY < y) Init();
-		return m_maxY < y;
+		if (ret) Init();
+		return ret;
 	}
 
 	bool operator()() {
@@ -94,6 +94,7 @@ private:
 	void MinoUpdate();
 	bool MinoRotate(bool isClockWise);
 	void HoldChange();
+	char DeleteLine();
 
 private:
 	enum Blocks {

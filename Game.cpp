@@ -274,6 +274,9 @@ void Game::MinoDown() {
 				etc...
 				
 			*/
+
+			DeleteLine();
+
 			if (InitMinoPos()) {
 				// GameOver
 			}
@@ -330,4 +333,22 @@ void Game::HoldChange() {
 		m_currentMino = tmp;
 	}
 	hasHeld = true;
+}
+char Game::DeleteLine() {
+	char deletedlineNum = 0;
+	for (int i = 0; i < FIELD_H; i++) {
+		bool lineCheck = true;
+		for (int j = 0; j < FIELD_W; j++) {
+			if (m_field[j][i] == NONE) {
+				lineCheck = false;
+				break;
+			}
+		}
+		if (lineCheck) {
+			deletedlineNum++;
+			for (; i > 0; i--) for (int j = 0; j < FIELD_W; j++) m_field[j][i] = m_field[j][i - 1];
+			for (int j = 0; j < FIELD_W; j++) m_field[j][0] = NONE;
+		}
+	}
+	return deletedlineNum;
 }
