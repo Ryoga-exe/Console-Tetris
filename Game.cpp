@@ -16,9 +16,14 @@ bool Game::Update() {
 		}
 		break;
 	case e_GAME:
-		MinoOpe();
-		MinoDown();
-		m_lockDown.Update();
+		if (!m_isDeleting) {
+			MinoOpe();
+			MinoDown();
+			m_lockDown.Update();
+		}
+		else {
+			DeleteLine();
+		}
 		break;
 	default:
 		break;
@@ -35,8 +40,10 @@ void Game::Draw() {
 	case e_GAME:
 		DrawStage();
 		DrawField();
-		DrawGhostMino();
-		DrawCurrentMino();
+		if (!m_isDeleting) {
+			DrawGhostMino();
+			DrawCurrentMino();
+		}
 		DrawNextMinos();
 		DrawHoldMino();
 		break;
@@ -56,14 +63,14 @@ void Game::Init() {
 		m_bagIndex++;
 	}
 	m_holdMino = { MINO_TYPE, 0 };
-	hasHeld = false;
+	m_hasHeld = m_isDeleting = false;
 
 	InitMinoPos();
 
 	m_score = 0;
 	m_currentLevel = 1;
 	m_currentDeletedLineNum = 0;
-	m_prevMinoDownTime = 0;
+	m_prevMinoDownTime = m_del = 0;
 	SpeedUpdate();
 	m_lockDown.Init();
 
@@ -261,7 +268,6 @@ void Game::MinoDown() {
 		if (!IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino)) m_currentMinoPos.Y++;
 		else {
 			FixMino();
-			MinoUpdate();
 			/*
 				delete line
 
@@ -269,13 +275,14 @@ void Game::MinoDown() {
 				
 			*/
 
-			DeleteLine();
-
-			if (InitMinoPos()) {
-				// GameOver
+			if (!DeleteLine()) {
+				MinoUpdate();
+				if (InitMinoPos()) {
+					// GameOver
+				}
 			}
 			m_lockDown.Init();
-			hasHeld = false;
+			m_hasHeld = false;
 		}
 	}
 }
@@ -320,7 +327,7 @@ bool Game::MinoRotate(bool isClockWise) {
 	return false;
 }
 void Game::HoldChange() {
-	if (hasHeld) return;
+	if (m_hasHeld) return;
 	// first (hold is empty)
 	if (m_holdMino.minoType < 0 || m_holdMino.minoType >= MINO_TYPE) {
 		m_holdMino.minoType = m_currentMino.minoType;
@@ -335,10 +342,11 @@ void Game::HoldChange() {
 		m_holdMino.minoType = m_currentMino.minoType;
 		m_currentMino = tmp;
 	}
-	hasHeld = true;
+	m_hasHeld = true;
 }
 char Game::DeleteLine() {
 	char deletedlineNum = 0;
+	bool hasCleared = false;
 	for (int i = 0; i < FIELD_H; i++) {
 		bool lineCheck = true;
 		for (int j = 0; j < FIELD_W; j++) {
@@ -349,17 +357,39 @@ char Game::DeleteLine() {
 		}
 		if (lineCheck) {
 			deletedlineNum++;
-			for (; i > 0; i--) for (int j = 0; j < FIELD_W; j++) m_field[j][i] = m_field[j][i - 1];
-			for (int j = 0; j < FIELD_W; j++) m_field[j][0] = NONE;
+			
+			if (!m_isDeleting) {
+				m_del = m_gameTimer.Elapse();
+			}
+
+			if (m_del + 300 > (signed)m_gameTimer.Elapse()) {
+				for (int j = 0; j < FIELD_W; j++) m_field[j][i] = CLRD;
+				m_isDeleting = true;
+			}
+			else {
+				for (; i > 0; i--) for (int j = 0; j < FIELD_W; j++) m_field[j][i] = m_field[j][i - 1];
+				for (int j = 0; j < FIELD_W; j++) m_field[j][0] = NONE;
+				hasCleared = true;
+			}
 		}
 	}
-	switch (deletedlineNum) {
-	case 1: m_score += 100 * m_currentLevel;
-	case 2: m_score += 300 * m_currentLevel;
-	case 3: m_score += 500 * m_currentLevel;
-	case 4: m_score += 800 * m_currentLevel;
-	default:break;
+
+	if (hasCleared) {
+		switch (deletedlineNum) {
+		case 1: m_score += 100 * m_currentLevel;
+		case 2: m_score += 300 * m_currentLevel;
+		case 3: m_score += 500 * m_currentLevel;
+		case 4: m_score += 800 * m_currentLevel;
+		default:break;
+		}
+		m_currentDeletedLineNum += deletedlineNum;
+
+		MinoUpdate();
+		if (InitMinoPos()) {
+			// GameOver
+		}
+		m_isDeleting = false;
 	}
-	m_currentDeletedLineNum += deletedlineNum;
+
 	return deletedlineNum;
 }

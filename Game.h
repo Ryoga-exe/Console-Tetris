@@ -109,6 +109,7 @@ private:
 		MN_J,
 		MN_L,
 		MN_T,
+		CLRD,
 		BLOCK_NUM
 	};
 
@@ -122,7 +123,8 @@ private:
 		GetColor(L_RED, L_RED),			// Z
 		GetColor(L_BLUE, L_BLUE),		// J
 		GetColor(L_YELLOW, L_YELLOW),	// L
-		GetColor(L_PURPLE, L_PURPLE)	// T
+		GetColor(L_PURPLE, L_PURPLE),	// T
+		GetColor(L_WHITE, L_WHITE)	// CLRD
 	};
 
 	Scenes m_scene = e_TITLE;
@@ -282,13 +284,15 @@ private:
 
 	MinoInfo_t m_currentMino, m_holdMino, m_nextMinos[4];
 	COORD m_currentMinoPos = { 0, 0 };
-	bool hasHeld;
+	bool m_hasHeld;
+	bool m_isDeleting;
 
 	byte m_bagArr[MINO_TYPE];
 	size_t m_bagIndex;
 	int m_score, m_topScore, m_currentLevel, m_currentDeletedLineNum;
 	int m_speedWaitMs;
 	LONGLONG m_prevMinoDownTime;
+	LONGLONG m_del;
 
 	LockDown_t m_lockDown;
 	
