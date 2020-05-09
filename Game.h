@@ -92,6 +92,7 @@ private:
 	bool IsHit(COORD minoPos, MinoInfo_t minoInfo);
 	void FixMino();
 	void MinoUpdate();
+	bool MinoMoveX(SHORT x);
 	bool MinoRotate(bool isClockWise);
 	void HoldChange();
 	char DeleteLine();

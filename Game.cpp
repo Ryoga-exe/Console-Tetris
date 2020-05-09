@@ -195,16 +195,10 @@ void Game::DrawGhostMino() {
 void Game::MinoOpe() {
 	switch (Console::Instance()->GetKeyEvent()) {
 	case KEY_INPUT_LEFT:	// MOVE LEFT
-		if (!IsHit({ m_currentMinoPos.X - 1, m_currentMinoPos.Y }, m_currentMino)) {
-			m_currentMinoPos.X--;
-			if (m_lockDown()) m_lockDown++;
-		}
+		MinoMoveX(-1);
 		break;
 	case KEY_INPUT_RIGHT:	// MOVE RIGHT
-		if (!IsHit({ m_currentMinoPos.X + 1, m_currentMinoPos.Y }, m_currentMino)) {
-			m_currentMinoPos.X++;
-			if (m_lockDown()) m_lockDown++;
-		}
+		MinoMoveX(+1);
 		break;
 	case KEY_INPUT_DOWN:	// SOFT DROP
 		if (!m_lockDown()) {
@@ -313,6 +307,15 @@ void Game::MinoUpdate() {
 	m_nextMinos[4 - 1].minoType = m_bagArr[m_bagIndex];
 	m_bagIndex++;
 }
+bool Game::MinoMoveX(SHORT x) {
+	if (!IsHit({ m_currentMinoPos.X + x, m_currentMinoPos.Y }, m_currentMino)) {
+		m_currentMinoPos.X += x;
+		if (m_lockDown()) m_lockDown++;
+		if (IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino)) m_prevMinoDownTime = m_gameTimer.Elapse();
+		return false;
+	}
+	return true;
+}
 bool Game::MinoRotate(bool isClockWise) {
 	return false;
 }
@@ -350,5 +353,13 @@ char Game::DeleteLine() {
 			for (int j = 0; j < FIELD_W; j++) m_field[j][0] = NONE;
 		}
 	}
+	switch (deletedlineNum) {
+	case 1: m_score += 100 * m_currentLevel;
+	case 2: m_score += 300 * m_currentLevel;
+	case 3: m_score += 500 * m_currentLevel;
+	case 4: m_score += 800 * m_currentLevel;
+	default:break;
+	}
+	m_currentDeletedLineNum += deletedlineNum;
 	return deletedlineNum;
 }
