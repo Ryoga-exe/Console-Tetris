@@ -332,15 +332,15 @@ void Game::HoldChange() {
 	if (m_holdMino.minoType < 0 || m_holdMino.minoType >= MINO_TYPE) {
 		m_holdMino.minoType = m_currentMino.minoType;
 		MinoUpdate();
-		if (InitMinoPos()) {
-			// GameOver
-		}
 		m_lockDown.Init();
 	}
 	else {
 		MinoInfo_t tmp = m_holdMino;
 		m_holdMino.minoType = m_currentMino.minoType;
 		m_currentMino = tmp;
+	}
+	if (InitMinoPos()) {
+		// GameOver
 	}
 	m_hasHeld = true;
 }
