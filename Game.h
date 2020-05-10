@@ -113,6 +113,15 @@ private:
 		BLOCK_NUM
 	};
 
+	enum Actions {
+		SINGLE,
+		DOUBLE,
+		TRIPLE,
+		TETRIS,
+		
+		ACTION_NUM
+	};
+
 	const WORD BLOCK_COLOR[BLOCK_NUM] = {
 		GetColor(H_WHITE, L_BLACK),		// NONE
 		GetColor(L_BLACK, H_WHITE),		// BLOCK
@@ -124,7 +133,14 @@ private:
 		GetColor(L_BLUE, L_BLUE),		// J
 		GetColor(L_YELLOW, L_YELLOW),	// L
 		GetColor(L_PURPLE, L_PURPLE),	// T
-		GetColor(L_WHITE, L_WHITE)	// CLRD
+		GetColor(L_WHITE, L_WHITE),		// CLRD
+	};
+
+	const char* ACTION_NOTIFICATIONS[ACTION_NUM] = {
+		" Single ",
+		" Double ",
+		" Triple ",
+		" Tetris ",
 	};
 
 	Scenes m_scene = e_TITLE;
@@ -283,7 +299,7 @@ private:
 	};
 
 	MinoInfo_t m_currentMino, m_holdMino, m_nextMinos[4];
-	COORD m_currentMinoPos = { 0, 0 };
+	COORD m_currentMinoPos;
 	bool m_hasHeld;
 	bool m_isDeleting;
 
@@ -295,5 +311,7 @@ private:
 	LONGLONG m_del;
 
 	LockDown_t m_lockDown;
-	
+
+	Actions m_actionNotification;
+	LONGLONG m_timeActionNotification;
 };

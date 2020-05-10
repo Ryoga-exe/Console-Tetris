@@ -73,6 +73,8 @@ void Game::Init() {
 	m_prevMinoDownTime = m_del = 0;
 	SpeedUpdate();
 	m_lockDown.Init();
+	m_actionNotification = SINGLE;
+	m_timeActionNotification = -1000;
 
 	m_topScore = 0; //~~~~~~~
 }
@@ -168,6 +170,9 @@ void Game::DrawStage() {
 		Console::Instance()->Printf(2, 16, BLOCK_COLOR[TEXT], "%02d:%02d:%02d", (int)(m_gameTimer.Elapse() / 3600000) % 100, (int)(m_gameTimer.Elapse() / 60000) % 60, (int)(m_gameTimer.Elapse() / 1000) % 60);
 	Console::Instance()->Print(2, 19, BLOCK_COLOR[NONE], "FPS:");
 	Console::Instance()->Printf(6, 19, BLOCK_COLOR[TEXT], "%.1f", Console::Instance()->GetFPSRate());
+
+	if (m_timeActionNotification + 1000 > (signed)m_gameTimer.Elapse())
+		Console::Instance()->Print((12 - (SHORT)strlen(ACTION_NOTIFICATIONS[m_actionNotification])) / 2, 5, GetColor(H_YELLOW, L_BLUE), ACTION_NOTIFICATIONS[m_actionNotification]);
 }
 void Game::DrawMino(COORD minoPos, MinoInfo_t minoInfo, bool isFix, bool isGhost) {
 	SHORT fixVal = isFix ? 6 : 0;
@@ -268,13 +273,6 @@ void Game::MinoDown() {
 		if (!IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino)) m_currentMinoPos.Y++;
 		else {
 			FixMino();
-			/*
-				delete line
-
-				etc...
-				
-			*/
-
 			if (!DeleteLine()) {
 				MinoUpdate();
 				if (InitMinoPos()) {
@@ -375,14 +373,23 @@ char Game::DeleteLine() {
 	}
 
 	if (hasCleared) {
+
+		// if É~ÉmÇ™TÇ© && íºëOÇÃëÄçÏÇ™âÒì]Ç© && TÉXÉsÉìèÛë‘Ç…äYìñÇµÇƒÇ¢ÇÈÇ©
+
+		// else
 		switch (deletedlineNum) {
-		case 1: m_score += 100 * m_currentLevel;
-		case 2: m_score += 300 * m_currentLevel;
-		case 3: m_score += 500 * m_currentLevel;
-		case 4: m_score += 800 * m_currentLevel;
+		case 1: m_score += 100 * m_currentLevel; break;
+		case 2: m_score += 300 * m_currentLevel; break;
+		case 3: m_score += 500 * m_currentLevel; break;
+		case 4: m_score += 800 * m_currentLevel; break;
 		default:break;
 		}
 		m_currentDeletedLineNum += deletedlineNum;
+
+		// if (m_actionNotification == TETRIS) Back to Back bonus
+
+		m_actionNotification = (Actions)(deletedlineNum - 1);
+		m_timeActionNotification = m_gameTimer.Elapse();
 
 		MinoUpdate();
 		if (InitMinoPos()) {
