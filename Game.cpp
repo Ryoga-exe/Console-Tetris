@@ -10,20 +10,21 @@ bool Game::Update() {
 	switch (m_scene) {
 	case e_TITLE:
 		if (Console::Instance()->GetKeyEvent() != KEY_NOT_INPUTED) {
-			m_scene = e_GAME;
-			m_gameTimer.Start();
-			m_prevMinoDownTime = m_gameTimer.Elapse();
+			StartGame();
 		}
 		break;
 	case e_GAME:
 		if (!m_isDeleting) {
 			MinoOpe();
-			MinoDown();
+			if (MinoDown()) StartGameOver();
 			m_lockDown.Update();
 		}
 		else {
-			DeleteLine();
+			if (DeleteLine() == -1) StartGameOver();
 		}
+		break;
+	case e_GAMEOVER:
+		GameOverUpdate();
 		break;
 	default:
 		break;
@@ -46,6 +47,11 @@ void Game::Draw() {
 		}
 		DrawNextMinos();
 		DrawHoldMino();
+		break;
+	case e_GAMEOVER:
+		DrawStage();
+		DrawField();
+		GameOverDraw();
 		break;
 	default:
 		break;
@@ -78,6 +84,11 @@ void Game::Init() {
 
 	m_topScore = 0; //~~~~~~~
 }
+void Game::StartGame() {
+	m_scene = e_GAME;
+	m_gameTimer.Start();
+	m_prevMinoDownTime = m_gameTimer.Elapse();
+}
 void Game::ClearField() {
 	for (size_t i = 0; i < FIELD_H; i++) for (size_t j = 0; j < FIELD_W; j++) m_field[j][i] = NONE;
 }
@@ -95,8 +106,8 @@ void Game::SetBag() {
 bool Game::InitMinoPos() {
 	m_currentMinoPos.X = 3;
 	bool ret = true;
-	for (SHORT i = m_currentMinoPos.Y = m_currentMino.minoType == 0 ? 0 : -1; i > m_currentMinoPos.Y - 2; i--) {
-		if (!IsHit({ m_currentMinoPos.X , i }, m_currentMino)) {
+	for (SHORT i = m_currentMinoPos.Y = m_currentMino.minoType == 0 ? 0 : -1; i > m_currentMinoPos.Y - 4; i--) {
+		if (!IsHit({ m_currentMinoPos.X , i}, m_currentMino)) {
 			m_currentMinoPos.Y = i;
 			ret = false;
 			break;
@@ -155,23 +166,24 @@ void Game::DrawStage() {
 	Console::Instance()->Print(3, 0, BLOCK_COLOR[NONE], " HOLD ");
 	Console::Instance()->Print(35, 0, BLOCK_COLOR[NONE], " NEXT ");
 
-	Console::Instance()->Print(2, 6, BLOCK_COLOR[NONE], "SCORE:");
-	Console::Instance()->Printf(2, 7, BLOCK_COLOR[TEXT], "%8d", m_score);
-	Console::Instance()->Print(2, 8, BLOCK_COLOR[NONE], "HI-SCORE");
-	Console::Instance()->Printf(2, 9, BLOCK_COLOR[TEXT], "%8d", 100);
-	Console::Instance()->Print(2, 11, BLOCK_COLOR[NONE], "LEVEL:");
-	Console::Instance()->Printf(2, 12, BLOCK_COLOR[TEXT], "%8d", m_currentLevel);
-	Console::Instance()->Print(2, 13, BLOCK_COLOR[NONE], "LINES:");
-	Console::Instance()->Printf(2, 14, BLOCK_COLOR[TEXT], "%8d", m_currentDeletedLineNum);
-	Console::Instance()->Print(2, 15, BLOCK_COLOR[NONE], "TIME:");
+	Console::Instance()->Print(2, 7, BLOCK_COLOR[NONE], "SCORE:");
+	Console::Instance()->Printf(2, 8, BLOCK_COLOR[TEXT], "%8d", m_score);
+	Console::Instance()->Print(2, 9, BLOCK_COLOR[NONE], "HI-SCORE");
+	Console::Instance()->Printf(2,10, BLOCK_COLOR[TEXT], "%8d", 100);
+	Console::Instance()->Print(2, 12, BLOCK_COLOR[NONE], "LEVEL:");
+	Console::Instance()->Printf(2, 13, BLOCK_COLOR[TEXT], "%8d", m_currentLevel);
+	Console::Instance()->Print(2, 14, BLOCK_COLOR[NONE], "LINES:");
+	Console::Instance()->Printf(2, 15, BLOCK_COLOR[TEXT], "%8d", m_currentDeletedLineNum);
+	Console::Instance()->Print(2, 16, BLOCK_COLOR[NONE], "TIME:");
+	LONGLONG t = m_scene == e_GAME ? m_gameTimer.Elapse() : m_timeActionNotification;
 	if ((int)(m_gameTimer.Elapse() / 60000) < 60)
-		Console::Instance()->Printf(2, 16, BLOCK_COLOR[TEXT], "%02d:%02d.%02d", (int)(m_gameTimer.Elapse() / 60000) % 60, (int)(m_gameTimer.Elapse() / 1000) % 60, (int)(m_gameTimer.Elapse() / 10) - (int)(m_gameTimer.Elapse() / 1000) * 100);
+		Console::Instance()->Printf(2, 17, BLOCK_COLOR[TEXT], "%02d:%02d.%02d", (int)(t / 60000) % 60, (int)(t / 1000) % 60, (int)(t / 10) - (int)(t / 1000) * 100);
 	else 
-		Console::Instance()->Printf(2, 16, BLOCK_COLOR[TEXT], "%02d:%02d:%02d", (int)(m_gameTimer.Elapse() / 3600000) % 100, (int)(m_gameTimer.Elapse() / 60000) % 60, (int)(m_gameTimer.Elapse() / 1000) % 60);
+		Console::Instance()->Printf(2, 16, BLOCK_COLOR[TEXT], "%02d:%02d:%02d", (int)(t / 3600000) % 100, (int)(t / 60000) % 60, (int)(t / 1000) % 60);
 	Console::Instance()->Print(2, 19, BLOCK_COLOR[NONE], "FPS:");
 	Console::Instance()->Printf(6, 19, BLOCK_COLOR[TEXT], "%.1f", Console::Instance()->GetFPSRate());
 
-	if (m_timeActionNotification + 1000 > (signed)m_gameTimer.Elapse())
+	if (m_timeActionNotification + 1000 > (signed)m_gameTimer.Elapse() && m_scene == e_GAME)
 		Console::Instance()->Print((12 - (SHORT)strlen(ACTION_NOTIFICATIONS[m_actionNotification])) / 2, 5, GetColor(H_YELLOW, L_BLUE), ACTION_NOTIFICATIONS[m_actionNotification]);
 }
 void Game::DrawMino(COORD minoPos, MinoInfo_t minoInfo, bool isFix, bool isGhost) {
@@ -252,7 +264,7 @@ void Game::MinoOpe() {
 	}
 	
 }
-void Game::MinoDown() {
+bool Game::MinoDown() {
 	if (m_currentLevel > 19)
 		for (; m_currentMinoPos.Y < FIELD_H_SEEN && !IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino); m_currentMinoPos.Y++);
 
@@ -280,12 +292,14 @@ void Game::MinoDown() {
 				MinoUpdate();
 				if (InitMinoPos()) {
 					// GameOver
+					return true;
 				}
 			}
 			m_lockDown.Init();
 			m_hasHeld = false;
 		}
 	}
+	return false;
 }
 bool Game::IsHit(COORD minoPos, MinoInfo_t minoInfo) {
 	if (minoInfo.minoType >= MINO_TYPE || minoInfo.minoAngle >= MINO_ANGLE) return true;
@@ -398,11 +412,48 @@ char Game::DeleteLine() {
 		SpeedUpdate();
 
 		MinoUpdate();
+		m_isDeleting = false;
 		if (InitMinoPos()) {
 			// GameOver
+			return -1;
 		}
-		m_isDeleting = false;
 	}
 
 	return deletedlineNum;
+}
+void Game::StartGameOver() {
+	m_scene = e_GAMEOVER;
+	m_timeActionNotification = m_gameTimer.Elapse();
+	m_gameTimer.Start();
+	m_prevMinoDownTime = m_gameTimer.Elapse();
+	m_del = 0;
+}
+void Game::GameOverUpdate() {
+	if (m_del < FIELD_H) {
+		if (20 + m_prevMinoDownTime <= (signed)m_gameTimer.Elapse()) {
+			m_prevMinoDownTime = m_gameTimer.Elapse();
+			for (int i = FIELD_H - 1; i > 0; i--)
+				for (int j = 0; j < FIELD_W; j++)
+					m_field[j][i] = m_field[j][i - 1];
+
+			for (int j = 0; j < FIELD_W; j++)
+				m_field[j][0] = NONE;
+			m_del++;
+		}
+	}
+	else {
+		if (Console::Instance()->GetKeyEvent() == KEY_INPUT_RETURN) {
+			Init();
+			StartGame();
+		}
+
+	}
+}
+void Game::GameOverDraw() {
+	if (!(m_del < FIELD_H)) {
+		Console::Instance()->Print(17, 5, GetColor(L_RED, GetBackgroundColor(NONE)), "GAME  OVER");
+
+		Console::Instance()->Print(13, 12, BLOCK_COLOR[NONE], "ENTER >> TRY AGAIN");
+		Console::Instance()->Print(13, 14, BLOCK_COLOR[NONE], "ESC   >> EXIT");
+	}
 }

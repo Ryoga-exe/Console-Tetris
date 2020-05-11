@@ -12,7 +12,8 @@
 
 enum Scenes {
 	e_TITLE,
-	e_GAME
+	e_GAME,
+	e_GAMEOVER
 };
 
 typedef struct {
@@ -75,6 +76,7 @@ public:
 	void Draw();
 private:
 	void Init();
+	void StartGame();
 	void ClearField();
 	void SetBag();
 	bool InitMinoPos();
@@ -88,7 +90,7 @@ private:
 	void DrawHoldMino();
 	void DrawGhostMino();
 	void MinoOpe();
-	void MinoDown();
+	bool MinoDown();
 	bool IsHit(COORD minoPos, MinoInfo_t minoInfo);
 	void FixMino();
 	void MinoUpdate();
@@ -96,6 +98,9 @@ private:
 	bool MinoRotate(bool isClockWise);
 	void HoldChange();
 	char DeleteLine();
+	void StartGameOver();
+	void GameOverUpdate();
+	void GameOverDraw();
 
 private:
 	enum Blocks {
