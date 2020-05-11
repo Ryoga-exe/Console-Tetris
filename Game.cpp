@@ -253,6 +253,9 @@ void Game::MinoOpe() {
 	
 }
 void Game::MinoDown() {
+	if (m_currentLevel > 19)
+		for (; m_currentMinoPos.Y < FIELD_H_SEEN && !IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino); m_currentMinoPos.Y++);
+
 	int speedWaitMs = m_speedWaitMs;
 	if (IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino)) {
 		if (!m_lockDown()) {
@@ -390,6 +393,9 @@ char Game::DeleteLine() {
 
 		m_actionNotification = (Actions)(deletedlineNum - 1);
 		m_timeActionNotification = m_gameTimer.Elapse();
+
+		m_currentLevel = 1 + (int)m_currentDeletedLineNum / 15;
+		SpeedUpdate();
 
 		MinoUpdate();
 		if (InitMinoPos()) {
