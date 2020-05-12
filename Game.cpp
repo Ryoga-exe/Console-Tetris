@@ -70,7 +70,7 @@ void Game::Init() {
 		m_bagIndex++;
 	}
 	m_holdMino = { MINO_TYPE, 0 };
-	m_hasHeld = m_isDeleting = false;
+	m_hasHeld = m_isDeleting = m_isBack2Back = false;
 
 	InitMinoPos();
 
@@ -186,8 +186,11 @@ void Game::DrawStage() {
 	Console::Instance()->Print(2, 19, BLOCK_COLOR[NONE], "FPS:");
 	Console::Instance()->Printf(6, 19, BLOCK_COLOR[TEXT], "%.1f", Console::Instance()->GetFPSRate());
 
-	if (m_timeActionNotification + 1000 > (signed)m_gameTimer.Elapse() && m_scene == e_GAME)
+	if (m_timeActionNotification + 1000 > (signed)m_gameTimer.Elapse() && m_scene == e_GAME) {
 		Console::Instance()->Print((12 - (SHORT)strlen(ACTION_NOTIFICATIONS[m_actionNotification])) / 2, 5, GetColor(H_YELLOW, L_BLUE), ACTION_NOTIFICATIONS[m_actionNotification]);
+		if (m_isBack2Back)
+			Console::Instance()->Print(0, 6, GetColor(H_YELLOW, L_BLUE), "Back to Back");
+	}
 	if (m_addtionalScore > 0)
 		Console::Instance()->Printf(2, 6, BLOCK_COLOR[TEXT], "%+8d", m_addtionalScore);
 }
@@ -400,6 +403,9 @@ char Game::DeleteLine() {
 	case 4: m_addtionalScore += 800 * m_currentLevel; break;
 	default:break;
 	}
+	if (m_actionNotification == TETRIS && deletedlineNum == 4) {
+		m_addtionalScore += (int)m_addtionalScore / 2;
+	}
 
 	if (hasCleared) {
 
@@ -411,7 +417,10 @@ char Game::DeleteLine() {
 
 		m_currentDeletedLineNum += deletedlineNum;
 
-		// if (m_actionNotification == TETRIS) Back to Back bonus
+		m_isBack2Back = false;
+		if (m_actionNotification == TETRIS && deletedlineNum == 4) {
+			m_isBack2Back = true;
+		}
 
 		m_actionNotification = (Actions)(deletedlineNum - 1);
 		m_timeActionNotification = m_gameTimer.Elapse();
