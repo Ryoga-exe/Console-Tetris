@@ -312,6 +312,7 @@ private:
 	size_t m_bagIndex;
 	int m_score, m_topScore, m_currentLevel, m_currentDeletedLineNum;
 	int m_speedWaitMs;
+	int m_addtionalScore;
 	LONGLONG m_prevMinoDownTime;
 	LONGLONG m_del;
 

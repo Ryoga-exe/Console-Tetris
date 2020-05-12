@@ -7,6 +7,7 @@ Game::Game() {
 }
 
 bool Game::Update() {
+	m_addtionalScore = 0;
 	switch (m_scene) {
 	case e_TITLE:
 		if (Console::Instance()->GetKeyEvent() != KEY_NOT_INPUTED) {
@@ -81,7 +82,7 @@ void Game::Init() {
 	m_lockDown.Init();
 	m_actionNotification = SINGLE;
 	m_timeActionNotification = -1000;
-
+	m_addtionalScore = 0;
 	m_topScore = 0; //~~~~~~~
 }
 void Game::StartGame() {
@@ -149,6 +150,8 @@ void Game::DrawTitle() {
 
 	Console::Instance()->Print(9, 16, GetColor((m_gameTimer.Elapse() & (1 << 9)) > 256 ? H_WHITE : H_BLACK, L_BLACK), "- PRESS ANY KEY TO START -");
 
+	Console::Instance()->Print(34, 20, GetColor(H_BLACK, L_BLACK), "Ryoga.exe");
+
 }
 void Game::DrawStage() {
 	Console::Instance()->DrawBox(0, 0, 1, STAGE_H, BLOCK_COLOR[BLCK]);
@@ -185,6 +188,8 @@ void Game::DrawStage() {
 
 	if (m_timeActionNotification + 1000 > (signed)m_gameTimer.Elapse() && m_scene == e_GAME)
 		Console::Instance()->Print((12 - (SHORT)strlen(ACTION_NOTIFICATIONS[m_actionNotification])) / 2, 5, GetColor(H_YELLOW, L_BLUE), ACTION_NOTIFICATIONS[m_actionNotification]);
+	if (m_addtionalScore > 0)
+		Console::Instance()->Printf(2, 6, BLOCK_COLOR[TEXT], "%+8d", m_addtionalScore);
 }
 void Game::DrawMino(COORD minoPos, MinoInfo_t minoInfo, bool isFix, bool isGhost) {
 	SHORT fixVal = isFix ? 6 : 0;
@@ -388,19 +393,22 @@ char Game::DeleteLine() {
 			}
 		}
 	}
+	switch (deletedlineNum) {
+	case 1: m_addtionalScore += 100 * m_currentLevel; break;
+	case 2: m_addtionalScore += 300 * m_currentLevel; break;
+	case 3: m_addtionalScore += 500 * m_currentLevel; break;
+	case 4: m_addtionalScore += 800 * m_currentLevel; break;
+	default:break;
+	}
 
 	if (hasCleared) {
 
 		// if ƒ~ƒm‚ªT‚© && ’¼‘O‚Ì‘€ì‚ª‰ñ“]‚© && TƒXƒsƒ“ó‘Ô‚ÉŠY“–‚µ‚Ä‚¢‚é‚©
 
 		// else
-		switch (deletedlineNum) {
-		case 1: m_score += 100 * m_currentLevel; break;
-		case 2: m_score += 300 * m_currentLevel; break;
-		case 3: m_score += 500 * m_currentLevel; break;
-		case 4: m_score += 800 * m_currentLevel; break;
-		default:break;
-		}
+		
+		m_score += m_addtionalScore;
+
 		m_currentDeletedLineNum += deletedlineNum;
 
 		// if (m_actionNotification == TETRIS) Back to Back bonus
