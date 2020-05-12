@@ -245,24 +245,12 @@ void Game::MinoOpe() {
 		break;
 	case KEY_INPUT_UP:		// ROTATE CLOCKWISE
 	case 'X':
-	case 'x': {
-			MinoInfo_t buf = m_currentMino;
-			buf.minoAngle = (buf.minoAngle + 1) % MINO_ANGLE;
-			if (!IsHit(m_currentMinoPos, buf)) {
-				m_currentMino = buf;
-				if (m_lockDown()) m_lockDown++;
-			}
-		}
+	case 'x':
+		MinoRotate(true);
 		break;
 	case 'Z':				// ROTATE COUNTER-CLOCKWISE
-	case 'z': {
-			MinoInfo_t buf = m_currentMino;
-			buf.minoAngle = (buf.minoAngle + MINO_ANGLE - 1) % MINO_ANGLE;
-			if (!IsHit(m_currentMinoPos, buf)) {
-				m_currentMino = buf;
-				if (m_lockDown()) m_lockDown++;
-			}
-		}
+	case 'z':
+		MinoRotate(false);
 		break;
 	case 'C':
 	case 'c':
@@ -347,7 +335,14 @@ bool Game::MinoMoveX(SHORT x) {
 	return true;
 }
 bool Game::MinoRotate(bool isClockWise) {
-	return false;
+	MinoInfo_t buf = m_currentMino;
+	buf.minoAngle = isClockWise ? (buf.minoAngle + 1) % MINO_ANGLE : (buf.minoAngle + MINO_ANGLE - 1) % MINO_ANGLE;
+	if (!IsHit(m_currentMinoPos, buf)) {
+		m_currentMino = buf;
+		if (m_lockDown()) m_lockDown++;
+		return false;
+	}
+	return true;
 }
 void Game::HoldChange() {
 	if (m_hasHeld) return;
