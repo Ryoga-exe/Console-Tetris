@@ -364,10 +364,6 @@ bool Game::MinoRotate(bool isClockWise) {
 							}
 						}
 					}
-					m_currentMino = buf;
-					m_currentMinoPos = bufPos;
-					if (m_lockDown()) m_lockDown++;
-					return false;
 				}
 				else if (m_currentMino.minoAngle == 1) {
 					bufPos.X -= 1;
@@ -385,10 +381,6 @@ bool Game::MinoRotate(bool isClockWise) {
 							}
 						}
 					}
-					m_currentMino = buf;
-					m_currentMinoPos = bufPos;
-					if (m_lockDown()) m_lockDown++;
-					return false;
 				}
 				else if (m_currentMino.minoAngle == 2) {
 					bufPos.X += 2;
@@ -406,10 +398,6 @@ bool Game::MinoRotate(bool isClockWise) {
 							}
 						}
 					}
-					m_currentMino = buf;
-					m_currentMinoPos = bufPos;
-					if (m_lockDown()) m_lockDown++;
-					return false;
 				}
 				else if (m_currentMino.minoAngle == 3) {
 					bufPos.X -= 2;
@@ -427,10 +415,6 @@ bool Game::MinoRotate(bool isClockWise) {
 							}
 						}
 					}
-					m_currentMino = buf;
-					m_currentMinoPos = bufPos;
-					if (m_lockDown()) m_lockDown++;
-					return false;
 				}
 			}
 			else {
@@ -450,10 +434,6 @@ bool Game::MinoRotate(bool isClockWise) {
 							}
 						}
 					}
-					m_currentMino = buf;
-					m_currentMinoPos = bufPos;
-					if (m_lockDown()) m_lockDown++;
-					return false;
 				}
 				else if (m_currentMino.minoAngle == 1) {
 					bufPos.X += 2;
@@ -471,10 +451,6 @@ bool Game::MinoRotate(bool isClockWise) {
 							}
 						}
 					}
-					m_currentMino = buf;
-					m_currentMinoPos = bufPos;
-					if (m_lockDown()) m_lockDown++;
-					return false;
 				}
 				else if (m_currentMino.minoAngle == 2) {
 					bufPos.X += 1;
@@ -492,10 +468,6 @@ bool Game::MinoRotate(bool isClockWise) {
 							}
 						}
 					}
-					m_currentMino = buf;
-					m_currentMinoPos = bufPos;
-					if (m_lockDown()) m_lockDown++;
-					return false;
 				}
 				else if (m_currentMino.minoAngle == 3) {
 					bufPos.X += 1;
@@ -513,12 +485,12 @@ bool Game::MinoRotate(bool isClockWise) {
 							}
 						}
 					}
-					m_currentMino = buf;
-					m_currentMinoPos = bufPos;
-					if (m_lockDown()) m_lockDown++;
-					return false;
 				}
 			}
+			m_currentMino = buf;
+			m_currentMinoPos = bufPos;
+			if (m_lockDown()) m_lockDown++;
+			return false;
 		}
 	}
 	return true;
