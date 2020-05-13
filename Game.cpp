@@ -371,44 +371,24 @@ bool Game::MinoRotate(bool isClockWise) {
 				}
 				else if (m_currentMino.minoAngle == 1) {
 					bufPos.X -= 1;
-					if (!IsHit(bufPos, buf)) {
-						m_currentMino = buf;
-						m_currentMinoPos = bufPos;
-						if (m_lockDown()) m_lockDown++;
-						return false;
-					}
-					else {
+					if (IsHit(bufPos, buf)) {
 						bufPos.X = m_currentMinoPos.X + 2;
-						if (!IsHit(bufPos, buf)) {
-							m_currentMino = buf;
-							m_currentMinoPos = bufPos;
-							if (m_lockDown()) m_lockDown++;
-							return false;
-						}
-						else {
+						if (IsHit(bufPos, buf)) {
 							bufPos.X = m_currentMinoPos.X - 1;
 							bufPos.Y = m_currentMinoPos.Y - 2;
-							if (!IsHit(bufPos, buf)) {
-								m_currentMino = buf;
-								m_currentMinoPos = bufPos;
-								if (m_lockDown()) m_lockDown++;
-								return false;
-							}
-							else {
+							if (IsHit(bufPos, buf)) {
 								bufPos.X = m_currentMinoPos.X + 2;
 								bufPos.Y = m_currentMinoPos.Y + 1;
-								if (!IsHit(bufPos, buf)) {
-									m_currentMino = buf;
-									m_currentMinoPos = bufPos;
-									if (m_lockDown()) m_lockDown++;
-									return false;
-								}
-								else {
+								if (IsHit(bufPos, buf)) {
 									return true;
 								}
 							}
 						}
 					}
+					m_currentMino = buf;
+					m_currentMinoPos = bufPos;
+					if (m_lockDown()) m_lockDown++;
+					return false;
 				}
 				else if (m_currentMino.minoAngle == 2) {
 					bufPos.X += 2;
