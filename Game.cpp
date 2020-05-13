@@ -389,7 +389,7 @@ bool Game::MinoRotate(bool isClockWise) {
 						}
 					}
 				}
-				if (m_currentMino.minoAngle == 1) {
+				else if (m_currentMino.minoAngle == 1) {
 					bufPos.X -= 1;
 					if (!IsHit(bufPos, buf)) {
 						m_currentMino = buf;
@@ -430,7 +430,7 @@ bool Game::MinoRotate(bool isClockWise) {
 						}
 					}
 				}
-				if (m_currentMino.minoAngle == 2) {
+				else if (m_currentMino.minoAngle == 2) {
 					bufPos.X += 2;
 					if (!IsHit(bufPos, buf)) {
 						m_currentMino = buf;
@@ -471,7 +471,7 @@ bool Game::MinoRotate(bool isClockWise) {
 						}
 					}
 				}
-				if (m_currentMino.minoAngle == 3) {
+				else if (m_currentMino.minoAngle == 3) {
 					bufPos.X -= 2;
 					if (!IsHit(bufPos, buf)) {
 						m_currentMino = buf;
@@ -555,7 +555,7 @@ bool Game::MinoRotate(bool isClockWise) {
 						}
 					}
 				}
-				if (m_currentMino.minoAngle == 1) {
+				else if (m_currentMino.minoAngle == 1) {
 					bufPos.X += 2;
 					if (!IsHit(bufPos, buf)) {
 						m_currentMino = buf;
@@ -596,7 +596,7 @@ bool Game::MinoRotate(bool isClockWise) {
 						}
 					}
 				}
-				if (m_currentMino.minoAngle == 2) {
+				else if (m_currentMino.minoAngle == 2) {
 					bufPos.X += 1;
 					if (!IsHit(bufPos, buf)) {
 						m_currentMino = buf;
@@ -637,7 +637,7 @@ bool Game::MinoRotate(bool isClockWise) {
 						}
 					}
 				}
-				if (m_currentMino.minoAngle == 3) {
+				else if (m_currentMino.minoAngle == 3) {
 					bufPos.X += 1;
 					if (!IsHit(bufPos, buf)) {
 						m_currentMino = buf;
