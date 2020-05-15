@@ -336,164 +336,21 @@ bool Game::MinoMoveX(SHORT x) {
 }
 bool Game::MinoRotate(bool isClockWise) {
 	if (m_currentMino.minoType == 1) return false;
-
 	MinoInfo_t buf = m_currentMino;
 	buf.minoAngle = isClockWise ? (buf.minoAngle + 1) % MINO_ANGLE : (buf.minoAngle + MINO_ANGLE - 1) % MINO_ANGLE;
-	if (!IsHit(m_currentMinoPos, buf)) {
-		m_currentMino = buf;
-		if (m_lockDown()) m_lockDown++;
-		return false;
-	}
-	else {
-		COORD bufPos = m_currentMinoPos;
-		if (m_currentMino.minoType == 0) {
-			if (isClockWise) {
-				if (m_currentMino.minoAngle == 0) {
-					bufPos.X -= 2;
-					if (IsHit(bufPos, buf)) {
-						bufPos.X = m_currentMinoPos.X + 1;
-						if (IsHit(bufPos, buf)) {
-							bufPos.X = m_currentMinoPos.X - 2;
-							bufPos.Y += 1;
-							if (IsHit(bufPos, buf)) {
-								bufPos.X = m_currentMinoPos.X + 1;
-								bufPos.Y = m_currentMinoPos.Y - 2;
-								if (IsHit(bufPos, buf)) {
-									return true;
-								}
-							}
-						}
-					}
-				}
-				else if (m_currentMino.minoAngle == 1) {
-					bufPos.X -= 1;
-					if (IsHit(bufPos, buf)) {
-						bufPos.X = m_currentMinoPos.X + 2;
-						if (IsHit(bufPos, buf)) {
-							bufPos.X = m_currentMinoPos.X - 1;
-							bufPos.Y = m_currentMinoPos.Y - 2;
-							if (IsHit(bufPos, buf)) {
-								bufPos.X = m_currentMinoPos.X + 2;
-								bufPos.Y = m_currentMinoPos.Y + 1;
-								if (IsHit(bufPos, buf)) {
-									return true;
-								}
-							}
-						}
-					}
-				}
-				else if (m_currentMino.minoAngle == 2) {
-					bufPos.X += 2;
-					if (IsHit(bufPos, buf)) {
-						bufPos.X = m_currentMinoPos.X - 1;
-						if (IsHit(bufPos, buf)) {
-							bufPos.X = m_currentMinoPos.X + 2;
-							bufPos.Y = m_currentMinoPos.Y - 1;
-							if (IsHit(bufPos, buf)) {
-								bufPos.X = m_currentMinoPos.X - 1;
-								bufPos.Y = m_currentMinoPos.Y + 2;
-								if (IsHit(bufPos, buf)) {
-									return true;
-								}
-							}
-						}
-					}
-				}
-				else if (m_currentMino.minoAngle == 3) {
-					bufPos.X -= 2;
-					if (IsHit(bufPos, buf)) {
-						bufPos.X = m_currentMinoPos.X + 1;
-						if (IsHit(bufPos, buf)) {
-							bufPos.X = m_currentMinoPos.X + 1;
-							bufPos.Y = m_currentMinoPos.Y + 2;
-							if (IsHit(bufPos, buf)) {
-								bufPos.X = m_currentMinoPos.X - 2;
-								bufPos.Y = m_currentMinoPos.Y + 1;
-								if (IsHit(bufPos, buf)) {
-									return true;
-								}
-							}
-						}
-					}
-				}
-			}
-			else {
-				if (m_currentMino.minoAngle == 0) {
-					bufPos.X -= 1;
-					if (IsHit(bufPos, buf)) {
-						bufPos.X = m_currentMinoPos.X + 2;
-						if (IsHit(bufPos, buf)) {
-							bufPos.X = m_currentMinoPos.X - 1;
-							bufPos.Y -= 2;
-							if (IsHit(bufPos, buf)) {
-								bufPos.X = m_currentMinoPos.X + 2;
-								bufPos.Y = m_currentMinoPos.Y + 1;
-								if (IsHit(bufPos, buf)) {
-									return true;
-								}
-							}
-						}
-					}
-				}
-				else if (m_currentMino.minoAngle == 1) {
-					bufPos.X += 2;
-					if (IsHit(bufPos, buf)) {
-						bufPos.X = m_currentMinoPos.X - 1;
-						if (IsHit(bufPos, buf)) {
-							bufPos.X = m_currentMinoPos.X + 2;
-							bufPos.Y -= 1;
-							if (IsHit(bufPos, buf)) {
-								bufPos.X = m_currentMinoPos.X - 1;
-								bufPos.Y = m_currentMinoPos.Y + 2;
-								if (IsHit(bufPos, buf)) {
-									return true;
-								}
-							}
-						}
-					}
-				}
-				else if (m_currentMino.minoAngle == 2) {
-					bufPos.X += 1;
-					if (IsHit(bufPos, buf)) {
-						bufPos.X = m_currentMinoPos.X - 2;
-						if (IsHit(bufPos, buf)) {
-							bufPos.X = m_currentMinoPos.X + 1;
-							bufPos.Y += 2;
-							if (IsHit(bufPos, buf)) {
-								bufPos.X = m_currentMinoPos.X - 2;
-								bufPos.Y = m_currentMinoPos.Y - 1;
-								if (IsHit(bufPos, buf)) {
-									return true;
-								}
-							}
-						}
-					}
-				}
-				else if (m_currentMino.minoAngle == 3) {
-					bufPos.X += 1;
-					if (IsHit(bufPos, buf)) {
-						bufPos.X = m_currentMinoPos.X - 2;
-						if (IsHit(bufPos, buf)) {
-							bufPos.X = m_currentMinoPos.X - 2;
-							bufPos.Y += 1;
-							if (IsHit(bufPos, buf)) {
-								bufPos.X = m_currentMinoPos.X + 1;
-								bufPos.Y = m_currentMinoPos.Y - 2;
-								if (IsHit(bufPos, buf)) {
-									return true;
-								}
-							}
-						}
-					}
-				}
-			}
+	COORD bufPos = m_currentMinoPos;
+
+	for (int i = 0; i < 5; i++) {
+		bufPos = m_currentMinoPos;
+		bufPos = AddCoord(bufPos, SRS_MOVE_POS[m_currentMino.minoType != 0][!isClockWise][m_currentMino.minoAngle][i]);
+		if (!IsHit(bufPos, buf)) {
 			m_currentMino = buf;
 			m_currentMinoPos = bufPos;
 			if (m_lockDown()) m_lockDown++;
-			return false;
+			return true;
 		}
 	}
-	return true;
+	return false;
 }
 void Game::HoldChange() {
 	if (m_hasHeld) return;

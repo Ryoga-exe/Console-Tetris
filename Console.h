@@ -39,6 +39,7 @@ WORD GetBackgroundColor(WORD color);
 int  GetRand();
 int  GetRand(int max);
 int  GetRand(int min, int max);
+COORD AddCoord(COORD coord1, COORD coord2);
 
 class Console : public Singleton<Console> {
 	Console();

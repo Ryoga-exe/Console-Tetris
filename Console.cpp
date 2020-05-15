@@ -23,6 +23,9 @@ int  GetRand(int max) {
 int  GetRand(int min, int max) {
 	return min + rand() % ((max - min) + 1);
 }
+COORD AddCoord(COORD coord1, COORD coord2) {
+	return { coord1.X + coord2.X, coord1.Y + coord2.Y };
+}
 
 Console::Console() {
 	HMENU hmenu = GetSystemMenu(GetConsoleWindow(), FALSE);
