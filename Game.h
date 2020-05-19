@@ -117,14 +117,20 @@ private:
 		CLRD,
 		BLOCK_NUM
 	};
-
 	enum Actions {
 		SINGLE,
 		DOUBLE,
 		TRIPLE,
 		TETRIS,
+		T_SPIN,
+		T_SPIN_MINI,
 		
 		ACTION_NUM
+	};
+	enum Tspin {
+		NOTSPIN,
+		SPIN,
+		MINI
 	};
 
 	const WORD BLOCK_COLOR[BLOCK_NUM] = {
@@ -146,6 +152,8 @@ private:
 		" Double ",
 		" Triple ",
 		" Tetris ",
+		" T-Spin ",
+		"T-Spin  Mini"
 	};
 
 	Scenes m_scene = e_TITLE;
@@ -348,4 +356,5 @@ private:
 
 	Actions m_actionNotification;
 	LONGLONG m_timeActionNotification;
+	Tspin m_tSpinAct;
 };

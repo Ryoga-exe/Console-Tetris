@@ -71,6 +71,7 @@ void Game::Init() {
 	}
 	m_holdMino = { MINO_TYPE, 0 };
 	m_hasHeld = m_isDeleting = m_isBack2Back = false;
+	m_tSpinAct = NOTSPIN;
 
 	InitMinoPos();
 
@@ -185,7 +186,6 @@ void Game::DrawStage() {
 		Console::Instance()->Printf(2, 16, BLOCK_COLOR[TEXT], "%02d:%02d:%02d", (int)(t / 3600000) % 100, (int)(t / 60000) % 60, (int)(t / 1000) % 60);
 	Console::Instance()->Print(2, 19, BLOCK_COLOR[NONE], "FPS:");
 	Console::Instance()->Printf(6, 19, BLOCK_COLOR[TEXT], "%.1f", Console::Instance()->GetFPSRate());
-
 	if (m_timeActionNotification + 1000 > (signed)m_gameTimer.Elapse() && m_scene == e_GAME) {
 		Console::Instance()->Print((12 - (SHORT)strlen(ACTION_NOTIFICATIONS[m_actionNotification])) / 2, 5, GetColor(H_YELLOW, L_BLUE), ACTION_NOTIFICATIONS[m_actionNotification]);
 		if (m_isBack2Back)
@@ -217,7 +217,13 @@ void Game::DrawNextMinos() {
 		DrawMino({ 17, 1 + i * 5 }, m_nextMinos[i], false);
 }
 void Game::DrawHoldMino() {
-	DrawMino({ 1,1 }, m_holdMino, false);
+	if (!m_hasHeld) DrawMino({ 1,1 }, m_holdMino, false);
+	else {
+		for (int i = 0; i < MINO_SIZE; i++)
+			for (int j = 0; j < MINO_SIZE; j++)
+				if (minoShapes[m_holdMino.minoType][m_holdMino.minoAngle][i][j] != NONE)
+					Console::Instance()->DrawPixel(1 + j, 1 + i, BLOCK_COLOR[CLRD]);
+	}
 }
 void Game::DrawGhostMino() {
 	SHORT i = m_currentMinoPos.Y;
@@ -228,33 +234,41 @@ void Game::MinoOpe() {
 	switch (Console::Instance()->GetKeyEvent()) {
 	case KEY_INPUT_LEFT:	// MOVE LEFT
 		MinoMoveX(-1);
+		m_tSpinAct = NOTSPIN;
 		break;
 	case KEY_INPUT_RIGHT:	// MOVE RIGHT
 		MinoMoveX(+1);
+		m_tSpinAct = NOTSPIN;
 		break;
 	case KEY_INPUT_DOWN:	// SOFT DROP
 		if (!m_lockDown()) {
 			if (!IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino)) m_prevMinoDownTime = -m_speedWaitMs;
 			m_score++;
+			m_tSpinAct = NOTSPIN;
 		}
 		
 		break;
 	case ' ':				// HARD DROP
 		for (; m_currentMinoPos.Y < FIELD_H_SEEN && !IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino); m_currentMinoPos.Y++, m_score+=2);
 		m_prevMinoDownTime = -m_speedWaitMs;
+		m_tSpinAct = NOTSPIN;
 		break;
 	case KEY_INPUT_UP:		// ROTATE CLOCKWISE
 	case 'X':
 	case 'x':
+		m_tSpinAct = NOTSPIN;
 		MinoRotate(true);
 		break;
 	case 'Z':				// ROTATE COUNTER-CLOCKWISE
 	case 'z':
+		m_tSpinAct = NOTSPIN;
 		MinoRotate(false);
 		break;
 	case 'C':
 	case 'c':
+		m_tSpinAct = NOTSPIN;
 		HoldChange();
+		break;
 	default:
 		break;
 	}
@@ -281,10 +295,17 @@ bool Game::MinoDown() {
 
 	if (speedWaitMs + m_prevMinoDownTime <= (signed)m_gameTimer.Elapse()) {
 		m_prevMinoDownTime = m_gameTimer.Elapse();
-		if (!IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino)) m_currentMinoPos.Y++;
+		if (!IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino)) {
+			m_currentMinoPos.Y++; m_tSpinAct = NOTSPIN;
+		}
 		else {
 			FixMino();
 			if (!DeleteLine()) {
+				if (m_tSpinAct != NOTSPIN) {
+					m_actionNotification = (Actions)(T_SPIN + m_tSpinAct - 1);
+					m_score += (m_tSpinAct == SPIN ? 400 : 100) * m_currentLevel;
+					m_timeActionNotification = m_gameTimer.Elapse();
+				}
 				MinoUpdate();
 				if (InitMinoPos()) {
 					// GameOver
@@ -347,6 +368,26 @@ bool Game::MinoRotate(bool isClockWise) {
 			m_currentMino = buf;
 			m_currentMinoPos = bufPos;
 			if (m_lockDown()) m_lockDown++;
+			/* T-Spin */
+			if (m_currentMino.minoType == 6) {
+				COORD tsCheckPos[4] = { {0,1},{2,1},{2,3},{0,3} };
+				int hitIndexNum = -1;
+				for (int i = 0; i < 4; i++) {
+					if ((m_currentMinoPos.X + tsCheckPos[i].X >= 0 && m_currentMinoPos.X + tsCheckPos[i].X < FIELD_W) && (m_currentMinoPos.Y + tsCheckPos[i].Y >= 0 - (FIELD_H - FIELD_H_SEEN) && m_currentMinoPos.Y + tsCheckPos[i].Y < FIELD_H_SEEN))
+						if (m_field[m_currentMinoPos.X + tsCheckPos[i].X][m_currentMinoPos.Y + tsCheckPos[i].Y + (FIELD_H - FIELD_H_SEEN)] == NONE) {
+							if (hitIndexNum != -1) return true;
+							hitIndexNum = i;
+						}
+				}
+				if (i != 4) {
+					if (hitIndexNum == (0 + m_currentMino.minoAngle) % 4 || hitIndexNum == (1 + m_currentMino.minoAngle) % 4) {
+						m_tSpinAct = MINI;
+						return true;
+					}
+				}
+				m_tSpinAct = SPIN;
+				return true;
+			}
 			return true;
 		}
 	}
@@ -369,6 +410,7 @@ void Game::HoldChange() {
 		// GameOver
 	}
 	m_hasHeld = true;
+	m_lockDown.Init();
 }
 char Game::DeleteLine() {
 	char deletedlineNum = 0;
