@@ -241,12 +241,9 @@ void Game::MinoOpe() {
 		m_tSpinAct = NOTSPIN;
 		break;
 	case KEY_INPUT_DOWN:	// SOFT DROP
-		if (!m_lockDown()) {
-			if (!IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino)) m_prevMinoDownTime = -m_speedWaitMs;
-			m_score++;
-			m_tSpinAct = NOTSPIN;
-		}
-		
+		if (!IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino)) m_prevMinoDownTime = -m_speedWaitMs;
+		m_score++;
+		m_tSpinAct = NOTSPIN;
 		break;
 	case ' ':				// HARD DROP
 		for (; m_currentMinoPos.Y < FIELD_H_SEEN && !IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino); m_currentMinoPos.Y++, m_score+=2);
@@ -306,7 +303,7 @@ bool Game::MinoDown() {
 					m_timeActionNotification = m_gameTimer.Elapse();
 					m_isBack2Back = false;
 					int addtion = (m_tSpinAct == SPIN ? 400 : 100) * m_currentLevel;
-					if (m_actionNotification == TETRIS || m_actionNotification == SPIN) {
+					if (m_actionNotification == TETRIS || (m_actionNotification >= T_SPIN && m_actionNotification <= T_SPIN_TRIPLE)) {
 						m_isBack2Back = true;
 						addtion += (int)addtion / 2;
 					}
@@ -468,7 +465,7 @@ char Game::DeleteLine() {
 		}
 	}
 	m_isBack2Back = false;
-	if (m_actionNotification == TETRIS && (deletedlineNum == 4 || m_tSpinAct == SPIN)) {
+	if ((m_actionNotification == TETRIS || (m_actionNotification >= T_SPIN && m_actionNotification <= T_SPIN_TRIPLE)) && (deletedlineNum == 4 || m_tSpinAct == SPIN)) {
 		m_isBack2Back = true;
 		m_addtionalScore += (int)m_addtionalScore / 2;
 	}
