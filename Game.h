@@ -124,6 +124,10 @@ private:
 		TETRIS,
 		T_SPIN,
 		T_SPIN_MINI,
+		T_SPIN_MINI_SINGLE,
+		T_SPIN_SINGLE,
+		T_SPIN_DOUBLE,
+		T_SPIN_TRIPLE,
 		
 		ACTION_NUM
 	};
@@ -153,7 +157,11 @@ private:
 		" Triple ",
 		" Tetris ",
 		" T-Spin ",
-		"T-Spin  Mini"
+		"T-Spin  Mini",
+		"TSpn Mn Sngl",
+		"T-SpinSingle",
+		"T-SpinDouble",
+		"T-SpinTriple"
 	};
 
 	Scenes m_scene = e_TITLE;

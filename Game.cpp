@@ -303,8 +303,14 @@ bool Game::MinoDown() {
 			if (!DeleteLine()) {
 				if (m_tSpinAct != NOTSPIN) {
 					m_actionNotification = (Actions)(T_SPIN + m_tSpinAct - 1);
-					m_score += (m_tSpinAct == SPIN ? 400 : 100) * m_currentLevel;
 					m_timeActionNotification = m_gameTimer.Elapse();
+					m_isBack2Back = false;
+					int addtion = (m_tSpinAct == SPIN ? 400 : 100) * m_currentLevel;
+					if (m_actionNotification == TETRIS || m_actionNotification == SPIN) {
+						m_isBack2Back = true;
+						addtion += (int)addtion / 2;
+					}
+					m_score += addtion;
 				}
 				MinoUpdate();
 				if (InitMinoPos()) {
@@ -441,33 +447,38 @@ char Game::DeleteLine() {
 			}
 		}
 	}
-	switch (deletedlineNum) {
-	case 1: m_addtionalScore += 100 * m_currentLevel; break;
-	case 2: m_addtionalScore += 300 * m_currentLevel; break;
-	case 3: m_addtionalScore += 500 * m_currentLevel; break;
-	case 4: m_addtionalScore += 800 * m_currentLevel; break;
-	default:break;
+	if (m_tSpinAct == NOTSPIN) {
+		switch (deletedlineNum) {
+		case 1: m_addtionalScore += 100 * m_currentLevel; break;
+		case 2: m_addtionalScore += 300 * m_currentLevel; break;
+		case 3: m_addtionalScore += 500 * m_currentLevel; break;
+		case 4: m_addtionalScore += 800 * m_currentLevel; break;
+		default:break;
+		}
 	}
-	if (m_actionNotification == TETRIS && deletedlineNum == 4) {
+	else if (m_tSpinAct == MINI) {
+		m_addtionalScore += 200 * m_currentLevel;
+	}
+	else {
+		switch (deletedlineNum) {
+		case 1: m_addtionalScore += 800  * m_currentLevel; break;
+		case 2: m_addtionalScore += 1200 * m_currentLevel; break;
+		case 3: m_addtionalScore += 1600 * m_currentLevel; break;
+		default:break;
+		}
+	}
+	m_isBack2Back = false;
+	if (m_actionNotification == TETRIS && (deletedlineNum == 4 || m_tSpinAct == SPIN)) {
+		m_isBack2Back = true;
 		m_addtionalScore += (int)m_addtionalScore / 2;
 	}
 
 	if (hasCleared) {
-
-		// if É~ÉmÇ™TÇ© && íºëOÇÃëÄçÏÇ™âÒì]Ç© && TÉXÉsÉìèÛë‘Ç…äYìñÇµÇƒÇ¢ÇÈÇ©
-
-		// else
-		
 		m_score += m_addtionalScore;
 
 		m_currentDeletedLineNum += deletedlineNum;
 
-		m_isBack2Back = false;
-		if (m_actionNotification == TETRIS && deletedlineNum == 4) {
-			m_isBack2Back = true;
-		}
-
-		m_actionNotification = (Actions)(deletedlineNum - 1);
+		m_actionNotification = m_tSpinAct == NOTSPIN ? (Actions)(deletedlineNum - 1) : m_tSpinAct == MINI ? T_SPIN_MINI_SINGLE : (Actions)(T_SPIN_SINGLE + deletedlineNum - 1);
 		m_timeActionNotification = m_gameTimer.Elapse();
 
 		m_currentLevel = 1 + (int)m_currentDeletedLineNum / 15;
