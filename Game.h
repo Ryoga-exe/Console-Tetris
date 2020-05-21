@@ -357,6 +357,7 @@ private:
 	int m_score, m_topScore, m_currentLevel, m_currentDeletedLineNum;
 	int m_speedWaitMs;
 	int m_addtionalScore;
+	int m_combo;
 	LONGLONG m_prevMinoDownTime;
 	LONGLONG m_del;
 

@@ -84,6 +84,7 @@ void Game::Init() {
 	m_actionNotification = SINGLE;
 	m_timeActionNotification = -1000;
 	m_addtionalScore = 0;
+	m_combo = -1;
 	m_topScore = 0; //~~~~~~~
 }
 void Game::StartGame() {
@@ -173,7 +174,7 @@ void Game::DrawStage() {
 	Console::Instance()->Print(2, 7, BLOCK_COLOR[NONE], "SCORE:");
 	Console::Instance()->Printf(2, 8, BLOCK_COLOR[TEXT], "%8d", m_score);
 	Console::Instance()->Print(2, 9, BLOCK_COLOR[NONE], "HI-SCORE");
-	Console::Instance()->Printf(2,10, BLOCK_COLOR[TEXT], "%8d", 100);
+	Console::Instance()->Printf(2,10, BLOCK_COLOR[TEXT], "%8d", m_topScore);
 	Console::Instance()->Print(2, 12, BLOCK_COLOR[NONE], "LEVEL:");
 	Console::Instance()->Printf(2, 13, BLOCK_COLOR[TEXT], "%8d", m_currentLevel);
 	Console::Instance()->Print(2, 14, BLOCK_COLOR[NONE], "LINES:");
@@ -191,6 +192,8 @@ void Game::DrawStage() {
 		if (m_isBack2Back)
 			Console::Instance()->Print(0, 6, GetColor(H_YELLOW, L_BLUE), "Back to Back");
 	}
+	if (m_combo > 0)
+		Console::Instance()->Printf(2, 4, BLOCK_COLOR[NONE], "Combo:%2d", m_combo);
 	if (m_addtionalScore > 0)
 		Console::Instance()->Printf(2, 6, BLOCK_COLOR[TEXT], "%+8d", m_addtionalScore);
 }
@@ -248,7 +251,7 @@ void Game::MinoOpe() {
 	case ' ':				// HARD DROP
 		for (; m_currentMinoPos.Y < FIELD_H_SEEN && !IsHit({ m_currentMinoPos.X, m_currentMinoPos.Y + 1 }, m_currentMino); m_currentMinoPos.Y++, m_score+=2);
 		m_prevMinoDownTime = -m_speedWaitMs;
-		m_tSpinAct = NOTSPIN;
+		//m_tSpinAct = NOTSPIN;
 		break;
 	case KEY_INPUT_UP:		// ROTATE CLOCKWISE
 	case 'X':
@@ -309,6 +312,7 @@ bool Game::MinoDown() {
 					m_timeActionNotification = m_gameTimer.Elapse();
 					m_score += addtion;
 				}
+				m_combo = -1;
 				MinoUpdate();
 				if (InitMinoPos()) {
 					// GameOver
@@ -464,14 +468,18 @@ char Game::DeleteLine() {
 		default:break;
 		}
 	}
-	m_isBack2Back = false;
-	if ((m_actionNotification == TETRIS || (m_actionNotification >= T_SPIN && m_actionNotification <= T_SPIN_TRIPLE)) && (deletedlineNum == 4 || m_tSpinAct == SPIN)) {
-		m_isBack2Back = true;
-		m_addtionalScore += (int)m_addtionalScore / 2;
+	if (deletedlineNum > 0) {
+		m_isBack2Back = false;
+		if ((m_actionNotification == TETRIS || (m_actionNotification >= T_SPIN && m_actionNotification <= T_SPIN_TRIPLE)) && (deletedlineNum == 4 || m_tSpinAct == SPIN)) {
+			m_isBack2Back = true;
+			m_addtionalScore += (int)m_addtionalScore / 2;
+		}
+		m_addtionalScore += 50 * (m_combo + 1) * m_currentLevel;
 	}
 
 	if (hasCleared) {
 		m_score += m_addtionalScore;
+		m_combo++;
 
 		m_currentDeletedLineNum += deletedlineNum;
 

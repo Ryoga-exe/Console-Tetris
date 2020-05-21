@@ -126,6 +126,9 @@ WORD  Console::GetTextColor() {
 bool Console::ProcessLoop() {
 	m_keyEvent = GetInputKey();
 	if (m_keyEvent == KEY_INPUT_ESC) return false;
+	/*if (GetAsyncKeyState(VK_F1) & 1) {
+		return false;
+	}*/
 	FlipScreen();
 	FPSUpdate();
 	WaitForFPS();
