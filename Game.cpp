@@ -299,14 +299,14 @@ bool Game::MinoDown() {
 			FixMino();
 			if (!DeleteLine()) {
 				if (m_tSpinAct != NOTSPIN) {
-					m_actionNotification = (Actions)(T_SPIN + m_tSpinAct - 1);
-					m_timeActionNotification = m_gameTimer.Elapse();
 					m_isBack2Back = false;
 					int addtion = (m_tSpinAct == SPIN ? 400 : 100) * m_currentLevel;
 					if (m_actionNotification == TETRIS || (m_actionNotification >= T_SPIN && m_actionNotification <= T_SPIN_TRIPLE)) {
 						m_isBack2Back = true;
 						addtion += (int)addtion / 2;
 					}
+					m_actionNotification = (Actions)(T_SPIN + m_tSpinAct - 1);
+					m_timeActionNotification = m_gameTimer.Elapse();
 					m_score += addtion;
 				}
 				MinoUpdate();
