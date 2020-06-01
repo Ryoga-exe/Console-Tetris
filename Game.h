@@ -100,6 +100,7 @@ private:
 	bool MinoRotate(bool isClockWise);
 	void HoldChange();
 	char DeleteLine();
+	bool IsPerfectClear();
 	void StartGameOver();
 	void GameOverUpdate();
 	void GameOverDraw();
@@ -353,6 +354,7 @@ private:
 	bool m_hasHeld;
 	bool m_isDeleting;
 	bool m_isBack2Back;
+	bool m_isPerfect;
 
 	byte m_bagArr[MINO_TYPE];
 	size_t m_bagIndex;

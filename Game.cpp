@@ -100,7 +100,7 @@ void Game::Init() {
 		m_bagIndex++;
 	}
 	m_holdMino = { MINO_TYPE, 0 };
-	m_hasHeld = m_isDeleting = m_isBack2Back = false;
+	m_hasHeld = m_isDeleting = m_isBack2Back = m_isPerfect = false;
 	m_tSpinAct = NOTSPIN;
 
 	InitMinoPos();
@@ -220,6 +220,9 @@ void Game::DrawStage() {
 		Console::Instance()->Print((12 - (SHORT)strlen(ACTION_NOTIFICATIONS[m_actionNotification])) / 2, 5, GetColor(H_YELLOW, L_BLUE), ACTION_NOTIFICATIONS[m_actionNotification]);
 		if (m_isBack2Back)
 			Console::Instance()->Print(0, 6, GetColor(H_YELLOW, L_BLUE), "Back to Back");
+
+		if (m_isPerfect)
+			Console::Instance()->Print(15, 6, GetColor(H_YELLOW, L_BLUE), "Perfect  Clear");
 	}
 	if (m_combo > 0)
 		Console::Instance()->Printf(2, 4, BLOCK_COLOR[NONE], "Combo:%2d", m_combo);
@@ -519,6 +522,10 @@ char Game::DeleteLine() {
 		SpeedUpdate();
 
 		MinoUpdate();
+
+		m_isPerfect = IsPerfectClear();
+		m_score += 3000 * m_currentLevel * m_isPerfect;
+		
 		m_isDeleting = false;
 		if (InitMinoPos()) {
 			// GameOver
@@ -527,6 +534,12 @@ char Game::DeleteLine() {
 	}
 
 	return deletedlineNum;
+}
+bool Game::IsPerfectClear() {
+	for (int i = 0; i < FIELD_H; i++)
+		for (int j = 0; j < FIELD_W; j++)
+			if (m_field[j][i] != NONE) return false;
+	return true;
 }
 void Game::StartGameOver() {
 	m_scene = e_GAMEOVER;
