@@ -1,11 +1,41 @@
 #include "Game.h"
+#include <filesystem>
+#include <iostream>
 #include <math.h>
+const char *file = "score.dat";
 
 Game::Game() {
 	m_scene = e_TITLE;
 	Init();
 }
 
+bool Game::LoadFile() {
+	FILE *fp;
+	if (fopen_s(&fp, file, "rb") != NULL) {
+		if (fopen_s(&fp, file, "wb") != NULL) {
+			return true;
+		}
+		m_topScore = 5000;
+		fwrite(&m_topScore, sizeof(m_topScore), 1, fp);
+		fclose(fp);
+	}
+	else {
+		fread(&m_topScore, sizeof(m_topScore), 1, fp);
+		fclose(fp);
+	}
+	return false;
+}
+bool Game::SaveFile() {
+	FILE *fp;
+	if (fopen_s(&fp, file, "wb") != NULL) {
+		return true;
+	}
+	else {
+		fwrite(&m_topScore, sizeof(m_topScore), 1, fp);
+		fclose(fp);
+	}
+	return false;
+}
 bool Game::Update() {
 	m_addtionalScore = 0;
 	switch (m_scene) {
@@ -85,7 +115,6 @@ void Game::Init() {
 	m_timeActionNotification = -1000;
 	m_addtionalScore = 0;
 	m_combo = -1;
-	m_topScore = 0; //~~~~~~~
 }
 void Game::StartGame() {
 	m_scene = e_GAME;
@@ -174,7 +203,7 @@ void Game::DrawStage() {
 	Console::Instance()->Print(2, 7, BLOCK_COLOR[NONE], "SCORE:");
 	Console::Instance()->Printf(2, 8, BLOCK_COLOR[TEXT], "%8d", m_score);
 	Console::Instance()->Print(2, 9, BLOCK_COLOR[NONE], "HI-SCORE");
-	Console::Instance()->Printf(2,10, BLOCK_COLOR[TEXT], "%8d", m_topScore);
+	Console::Instance()->Printf(2,10, BLOCK_COLOR[TEXT], "%8d", m_score > m_topScore ? m_score : m_topScore);
 	Console::Instance()->Print(2, 12, BLOCK_COLOR[NONE], "LEVEL:");
 	Console::Instance()->Printf(2, 13, BLOCK_COLOR[TEXT], "%8d", m_currentLevel);
 	Console::Instance()->Print(2, 14, BLOCK_COLOR[NONE], "LINES:");
@@ -470,7 +499,7 @@ char Game::DeleteLine() {
 	}
 	if (deletedlineNum > 0) {
 		m_isBack2Back = false;
-		if ((m_actionNotification == TETRIS || (m_actionNotification >= T_SPIN && m_actionNotification <= T_SPIN_TRIPLE)) && (deletedlineNum == 4 || m_tSpinAct == SPIN)) {
+		if ((m_actionNotification == TETRIS || (m_actionNotification >= T_SPIN && m_actionNotification <= T_SPIN_TRIPLE)) && (deletedlineNum == 4 || m_tSpinAct == SPIN || m_tSpinAct == MINI)) {
 			m_isBack2Back = true;
 			m_addtionalScore += (int)m_addtionalScore / 2;
 		}
@@ -505,6 +534,7 @@ void Game::StartGameOver() {
 	m_gameTimer.Start();
 	m_prevMinoDownTime = m_gameTimer.Elapse();
 	m_del = 0;
+	if (m_score > m_topScore) m_topScore = m_score;
 }
 void Game::GameOverUpdate() {
 	if (m_del < FIELD_H) {
@@ -529,9 +559,11 @@ void Game::GameOverUpdate() {
 }
 void Game::GameOverDraw() {
 	if (!(m_del < FIELD_H)) {
-		Console::Instance()->Print(17, 5, GetColor(L_RED, GetBackgroundColor(NONE)), "GAME  OVER");
+		Console::Instance()->Print(17, 5, GetColor(L_RED   , GetBackgroundColor(NONE)), "GAME  OVER");
 
-		Console::Instance()->Print(13, 12, BLOCK_COLOR[NONE], "ENTER >> TRY AGAIN");
-		Console::Instance()->Print(13, 14, BLOCK_COLOR[NONE], "ESC   >> EXIT");
+		if (m_score >= m_topScore) Console::Instance()->Print(16, 9, GetColor(H_YELLOW, GetBackgroundColor(NONE)), "NEW RECORD!!");
+
+		Console::Instance()->Print(13, 13, BLOCK_COLOR[NONE], "ENTER >> TRY AGAIN");
+		Console::Instance()->Print(13, 15, BLOCK_COLOR[NONE], "ESC   >> EXIT");
 	}
 }

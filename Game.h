@@ -72,6 +72,8 @@ public:
 
 	}
 
+	bool LoadFile();
+	bool SaveFile();
 	bool Update();
 	void Draw();
 private:
