@@ -15,7 +15,7 @@ bool Game::LoadFile() {
 		if (fopen_s(&fp, file, "wb") != NULL) {
 			return true;
 		}
-		m_topScore = 5000;
+		m_topScore = 10000;
 		fwrite(&m_topScore, sizeof(m_topScore), 1, fp);
 		fclose(fp);
 	}
@@ -45,13 +45,16 @@ bool Game::Update() {
 		}
 		break;
 	case e_GAME:
-		if (!m_isDeleting) {
-			MinoOpe();
-			if (MinoDown()) StartGameOver();
-			m_lockDown.Update();
-		}
-		else {
-			if (DeleteLine() == -1) StartGameOver();
+		if (Console::Instance()->GetKeyEvent() == '1') m_isPausing = m_gameTimer.SwitchPause();
+		if (!m_isPausing) {
+			if (!m_isDeleting) {
+				MinoOpe();
+				if (MinoDown()) StartGameOver();
+				m_lockDown.Update();
+			}
+			else {
+				if (DeleteLine() == -1) StartGameOver();
+			}
 		}
 		break;
 	case e_GAMEOVER:
@@ -71,13 +74,15 @@ void Game::Draw() {
 		break;
 	case e_GAME:
 		DrawStage();
-		DrawField();
-		if (!m_isDeleting) {
-			DrawGhostMino();
-			DrawCurrentMino();
+		if (!m_isPausing) {
+			DrawField();
+			if (!m_isDeleting) {
+				DrawGhostMino();
+				DrawCurrentMino();
+			}
+			DrawNextMinos();
+			DrawHoldMino();
 		}
-		DrawNextMinos();
-		DrawHoldMino();
 		break;
 	case e_GAMEOVER:
 		DrawStage();
@@ -100,7 +105,7 @@ void Game::Init() {
 		m_bagIndex++;
 	}
 	m_holdMino = { MINO_TYPE, 0 };
-	m_hasHeld = m_isDeleting = m_isBack2Back = m_isPerfect = false;
+	m_hasHeld = m_isDeleting = m_isBack2Back = m_isPerfect = m_isPausing = false;
 	m_tSpinAct = NOTSPIN;
 
 	InitMinoPos();
@@ -228,6 +233,10 @@ void Game::DrawStage() {
 		Console::Instance()->Printf(2, 4, BLOCK_COLOR[NONE], "Combo:%2d", m_combo);
 	if (m_addtionalScore > 0)
 		Console::Instance()->Printf(2, 6, BLOCK_COLOR[TEXT], "%+8d", m_addtionalScore);
+
+	if (m_isPausing) {
+		Console::Instance()->Print(19, 6, BLOCK_COLOR[NONE], "Paused");
+	}
 }
 void Game::DrawMino(COORD minoPos, MinoInfo_t minoInfo, bool isFix, bool isGhost) {
 	SHORT fixVal = isFix ? 6 : 0;
@@ -332,6 +341,7 @@ bool Game::MinoDown() {
 		}
 		else {
 			FixMino();
+			m_isPerfect = false;
 			if (!DeleteLine()) {
 				if (m_tSpinAct != NOTSPIN) {
 					m_isBack2Back = false;

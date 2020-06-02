@@ -355,6 +355,7 @@ private:
 	bool m_isDeleting;
 	bool m_isBack2Back;
 	bool m_isPerfect;
+	bool m_isPausing;
 
 	byte m_bagArr[MINO_TYPE];
 	size_t m_bagIndex;
